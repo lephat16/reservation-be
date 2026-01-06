@@ -82,5 +82,5 @@ public class InventoryStockController {
 
         return ResponseEntity.ok(inventoryStockService.getInventoryStockByProduct(productId));
     }
-
+    
 }

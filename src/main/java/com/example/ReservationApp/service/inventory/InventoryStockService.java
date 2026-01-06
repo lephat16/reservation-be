@@ -27,6 +27,5 @@ public interface InventoryStockService {
     ResponseDTO<ReceiveStockResultDTO> receiveStock(Long poId, List<ReceiveStockItemDTO> receivedItems);
 
     ResponseDTO<DeliverStockResultDTO> deliverStock(Long poId, List<DeliverStockItemDTO> deliverItems);
-
     
 }

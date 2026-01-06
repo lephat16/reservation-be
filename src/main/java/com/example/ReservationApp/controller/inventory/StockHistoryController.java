@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.service.inventory.StockHistoryService;
 
@@ -73,4 +74,12 @@ public class StockHistoryController {
         LocalDateTime fromDateTime = fromDate.atStartOfDay();
         return ResponseEntity.ok(stockHistoryService.getRecentStockHistory(fromDateTime));
     }
+
+    @GetMapping("/stock-history/purchase-order/{poId}")
+    public ResponseEntity<ResponseDTO<List<InventoryHistoryByPurchaseOrderDTO>>> getInventoryHistoryByPurchaseOrder(
+            @PathVariable Long poId) {
+
+        return ResponseEntity.ok(stockHistoryService.getInventoryHistoryByPurchaseOrder(poId));
+    }
+    
 }

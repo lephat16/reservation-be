@@ -11,7 +11,13 @@ public interface SupplierProductStockFlatDTO {
 
     String getCategoryName();
 
+    String getSupplierName();
+
+    String getSupplierId();
+
     BigDecimal getPrice();
 
     Integer getTotalQuantity();
+
+    Integer getLeadTime();
 }

@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.supplier.CategoryProductsDTO;
-import com.example.ReservationApp.dto.response.supplier.SupplierProductStockFlatDTO;
 import com.example.ReservationApp.dto.supplier.SupplierProductDTO;
 import com.example.ReservationApp.dto.supplier.SupplierProductPriceHistoryDTO;
 import com.example.ReservationApp.service.supplier.SupplierProductService;
@@ -72,6 +71,12 @@ public class SupplierProductController {
                         @PathVariable Long supplierId) {
                 return ResponseEntity
                                 .ok(supplierProductService.getSupplierProductsWithStock(supplierId));
+        }
+        @GetMapping("/with-lead-time/{supplierId}")
+        public ResponseEntity<ResponseDTO<List<CategoryProductsDTO>>> getSupplierProductsWithLeadTime(
+                        @PathVariable Long supplierId) {
+                return ResponseEntity
+                                .ok(supplierProductService.getSupplierProductsWithLeadTime(supplierId));
         }
 
 }

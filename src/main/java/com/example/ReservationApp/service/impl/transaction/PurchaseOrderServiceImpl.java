@@ -21,7 +21,10 @@ import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.enums.OrderStatus;
+import com.example.ReservationApp.enums.UserRole;
+import com.example.ReservationApp.exception.InvalidActionException;
 import com.example.ReservationApp.exception.NotFoundException;
+import com.example.ReservationApp.exception.UnauthorizedException;
 import com.example.ReservationApp.mapper.PurchaseOrderDetailMapper;
 import com.example.ReservationApp.mapper.PurchaseOrderMapper;
 import com.example.ReservationApp.repository.product.ProductRepository;
@@ -270,6 +273,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
                 PurchaseOrder po = purchaseOrderRepository.findById(poId)
                                 .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+
+                User currentUser = userService.getCurrentUserEntity();
+                if (!po.getStatus().equals(OrderStatus.NEW)) {
+                        throw new InvalidActionException("注文書はすでに処理済みのため削除できません。");
+                }
+                if (!po.getCreatedBy().equals(currentUser) && !currentUser.getRole().equals(UserRole.ADMIN)) {
+                        throw new UnauthorizedException("削除する権限がありません。");
+                }
+
                 purchaseOrderRepository.delete(po);
                 return ResponseDTO.<Void>builder()
                                 .status(HttpStatus.OK.value())

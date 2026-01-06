@@ -286,4 +286,37 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                 .data(responseData)
                 .build();
     }
+    @Override
+    public ResponseDTO<List<CategoryProductsDTO>> getSupplierProductsWithLeadTime(Long supplierId) {
+
+        if (!supplierRepository.existsById(supplierId)) {
+            throw new NotFoundException("この仕入先は存在していません。");
+        }
+        List<SupplierProductStockFlatDTO> rows = supplierProductRepository.findSupplierProductsWithStock(supplierId);
+
+        Map<String, List<SupplierProductInCategoryDTO>> grouped = rows.stream()
+                .collect(Collectors.groupingBy(
+                        SupplierProductStockFlatDTO::getSupplierName,
+                        LinkedHashMap::new,
+                        Collectors.mapping(p -> SupplierProductInCategoryDTO.builder()
+                                .id(p.getId())
+                                .sku(p.getSku())
+                                .product(p.getProductName())
+                                .price(p.getPrice())
+                                .leadTime(p.getLeadTime())
+                                .build(), Collectors.toList())));
+
+        List<CategoryProductsDTO> responseData = grouped.entrySet().stream()
+                .map(entry -> CategoryProductsDTO.builder()
+                        .supplierName(entry.getKey())
+                        .supplierId(supplierId)
+                        .products(entry.getValue())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseDTO.<List<CategoryProductsDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("取得に成功しました。")
+                .data(responseData)
+                .build();
+    }
 }

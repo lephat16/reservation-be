@@ -20,5 +20,6 @@ public interface SupplierProductService {
     ResponseDTO<List<SupplierProductPriceHistoryDTO>> getPriceHistory();
 
     ResponseDTO<List<CategoryProductsDTO>> getSupplierProductsWithStock(Long supplierId);
-
+    
+    ResponseDTO<List<CategoryProductsDTO>> getSupplierProductsWithLeadTime(Long supplierId);
 }

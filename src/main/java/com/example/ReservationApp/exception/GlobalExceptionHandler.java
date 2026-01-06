@@ -150,4 +150,23 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
                 
         }
+
+        @ExceptionHandler(InvalidActionException.class)
+        public ResponseEntity<ResponseDTO<Void>> InvalidActionException(InvalidActionException ex) {
+                ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message(ex.getMessage())
+                                .build();
+
+                return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
+        }
+        @ExceptionHandler(UnauthorizedException.class)
+        public ResponseEntity<ResponseDTO<Void>> UnauthorizedException(UnauthorizedException ex) {
+                ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message(ex.getMessage())
+                                .build();
+
+                return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
+        }
 }

@@ -7,24 +7,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
-import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 
 import io.lettuce.core.dynamic.annotation.Param;
 
 public interface StockHistoryRepository extends JpaRepository<StockHistory, Long> {
 
-        // @Query("""
-        // SELECT COALESCE(SUM(sh.changeQty),0)
-        // FROM StockHistory sh
-        // WHERE sh.refType = 'PO'
-        // AND sh.refId = :poId
-        // AND sh.inventoryStock.product.id = :productId
-        // """)
-
-        // Integer sumReceivedQtyByPoAndProduct(
-        // @Param("poId") Long poId,
-        // @Param("productId") Long productId);
+       
 
         @Query("""
                         SELECT
