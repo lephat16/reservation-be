@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -103,6 +104,20 @@ public class GlobalExceptionHandler {
 
         @ExceptionHandler(HandlerMethodValidationException.class)
         public ResponseEntity<ResponseDTO<Object>> handleValidation(HandlerMethodValidationException ex) {
+
+                List<String> errors = ex.getAllErrors().stream()
+                                .map(error -> error.getDefaultMessage())
+                                .collect(Collectors.toList());
+                ResponseDTO<Object> responseDTO = ResponseDTO.builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message("入力に誤りがあります")
+                                .errors(errors)
+                                .build();
+                return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
+        }
+
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<ResponseDTO<Object>> handleArgumentValidation(MethodArgumentNotValidException ex) {
 
                 List<String> errors = ex.getAllErrors().stream()
                                 .map(error -> error.getDefaultMessage())

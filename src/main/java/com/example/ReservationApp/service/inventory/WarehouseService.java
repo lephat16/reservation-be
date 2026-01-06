@@ -20,4 +20,6 @@ public interface WarehouseService {
     ResponseDTO<WarehouseDTO> updateWarehouse(Long warehouseId, WarehouseDTO warehouseDTO);
 
     ResponseDTO<Void> deleteWarehouse(Long warehouseId);
+
+    
 }

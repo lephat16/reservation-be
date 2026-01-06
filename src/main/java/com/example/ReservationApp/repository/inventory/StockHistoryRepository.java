@@ -6,6 +6,8 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
+import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 
 import io.lettuce.core.dynamic.annotation.Param;
@@ -25,12 +27,18 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
         // @Param("productId") Long productId);
 
         @Query("""
-                            SELECT sh.inventoryStock.product.id, COALESCE(SUM(sh.changeQty), 0)
-                            FROM StockHistory sh
-                            WHERE sh.refType = 'PO'
-                              AND sh.refId = :poId
-                            GROUP BY sh.inventoryStock.product.id
-                        """)
+                        SELECT
+                            sh.inventoryStock.product.id,
+                            COALESCE(SUM(sh.changeQty), 0),
+                            sp.supplierSku
+                        FROM StockHistory sh
+                        JOIN sh.inventoryStock s
+                        JOIN s.product p
+                        JOIN SupplierProduct sp ON sp.product.id = p.id
+                        WHERE sh.refType = 'PO'
+                        AND sh.refId = :poId
+                        GROUP BY sh.inventoryStock.product.id, sp.supplierSku
+                                """)
         List<Object[]> sumReceivedQtyByPoGroupByProduct(@Param("poId") Long poId);
 
         @Query("""
@@ -104,4 +112,29 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
                         ORDER BY sh.createdAt DESC
                         """)
         List<StockHistory> findRecentStockHistory(@Param("fromDate") LocalDateTime fromDate);
+
+        @Query(value = """
+                        SELECT
+                            sh.id,
+                            wh.location,
+                            wh.name AS warehouse_name,
+                            sh.change_qty,
+                            sh.notes,
+                            p.name AS product_name,
+                            s.name AS supplier_name,
+                            sh.ref_type,
+                            sh.created_at,
+                            sp.supplier_sku
+                        FROM public.inventory_stocks ivs
+                        JOIN warehouses wh ON wh.id = ivs.warehouse_id
+                        JOIN stock_histories sh ON sh.inventory_stock_id = ivs.id
+                        JOIN products p ON p.id = ivs.product_id
+                        JOIN purchase_orders po ON po.id = sh.ref_id
+                        JOIN suppliers s ON s.id = po.supplier_id
+                        JOIN supplier_products sp ON sp.product_id = p.id
+                        WHERE po.id = :poId
+                        ORDER BY sh.created_at DESC
+                        """, nativeQuery = true)
+        List<InventoryHistoryByPurchaseOrderFlatDTO> findInventoryHistoryByPurchaseOrder(@Param("poId") Long poId);
+
 }

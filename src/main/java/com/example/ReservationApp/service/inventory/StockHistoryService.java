@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 
 public interface StockHistoryService {
@@ -19,4 +20,7 @@ public interface StockHistoryService {
     ResponseDTO<List<StockHistoryDTO>> getStockHistoryByProduct(Long productId);
 
     ResponseDTO<List<StockHistoryDTO>> getRecentStockHistory(LocalDateTime fromDate);
+    
+    ResponseDTO<List<InventoryHistoryByPurchaseOrderDTO>> getInventoryHistoryByPurchaseOrder(Long poId);
+
 }

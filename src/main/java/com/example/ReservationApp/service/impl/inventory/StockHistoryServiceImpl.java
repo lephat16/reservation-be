@@ -2,6 +2,7 @@ package com.example.ReservationApp.service.impl.inventory;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
@@ -189,4 +192,31 @@ public class StockHistoryServiceImpl implements StockHistoryService {
                 .build();
     }
 
+    @Override
+    public ResponseDTO<List<InventoryHistoryByPurchaseOrderDTO>> getInventoryHistoryByPurchaseOrder(Long poId) {
+
+        List<InventoryHistoryByPurchaseOrderFlatDTO> inventoryHistoryByPurchaseOrderFlatDTOs = stockHistoryRepository
+                .findInventoryHistoryByPurchaseOrder(poId);
+
+        List<InventoryHistoryByPurchaseOrderDTO> inventoryHistoryByPurchaseOrderDTOs = inventoryHistoryByPurchaseOrderFlatDTOs
+                .stream()
+                .map(flatDTO -> InventoryHistoryByPurchaseOrderDTO.builder()
+                        .id(flatDTO.getId())
+                        .location(flatDTO.getLocation())
+                        .warehouseName(flatDTO.getWarehouseName())
+                        .changeQty(flatDTO.getChangeQty())
+                        .notes(flatDTO.getNotes())
+                        .productName(flatDTO.getProductName())
+                        .supplierName(flatDTO.getSupplierName())
+                        .refType(flatDTO.getRefType())
+                        .createdAt(flatDTO.getCreatedAt())
+                        .supplierSku(flatDTO.getSupplierSku())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseDTO.<List<InventoryHistoryByPurchaseOrderDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("在庫履歴取得に成功しました。")
+                .data(inventoryHistoryByPurchaseOrderDTOs)
+                .build();
+    }
 }

@@ -20,4 +20,6 @@ public interface PurchaseOrderService {
     ResponseDTO<PurchaseOrderDTO> updatePurchaseOrderQuantityAndDescription(Long id, PurchaseOrderDTO purchaseOrderDTO);
 
     ResponseDTO<Void> deletePurchaseOrder(Long purchaseOrderId);
+
+    ResponseDTO<PurchaseOrderDTO> placeOrder(Long purchaseOrderId);
 }

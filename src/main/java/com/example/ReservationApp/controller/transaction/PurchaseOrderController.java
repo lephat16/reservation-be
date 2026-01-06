@@ -60,4 +60,9 @@ public class PurchaseOrderController {
     ResponseEntity<ResponseDTO<Void>> deletePurchaseOrder(@PathVariable Long poId) {
         return ResponseEntity.ok(purchaseOrderService.deletePurchaseOrder(poId));
     }
+
+    @PutMapping("/purchase/place/{poId}")
+    ResponseEntity<ResponseDTO<PurchaseOrderDTO>> placeOrder(@PathVariable Long poId) {
+        return ResponseEntity.ok(purchaseOrderService.placeOrder(poId));
+    }
 }

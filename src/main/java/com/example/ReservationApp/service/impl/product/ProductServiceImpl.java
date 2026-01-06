@@ -23,6 +23,7 @@ import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoFlatDTO;
+import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
 import com.example.ReservationApp.dto.response.product.SupplierPriceDTO;
 import com.example.ReservationApp.entity.product.Category;
 import com.example.ReservationApp.entity.product.Product;
@@ -37,6 +38,7 @@ import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.product.CategoryRepository;
 import com.example.ReservationApp.repository.product.ProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
+import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
 import com.example.ReservationApp.service.product.ProductService;
 
 import lombok.RequiredArgsConstructor;
@@ -60,6 +62,7 @@ public class ProductServiceImpl implements ProductService {
     private final SupplierProductRepository supplierProductRepository;
     private final StockHistoryRepository stockHistoryRepository;
     private final InventoryStockRepository inventoryStockRepository;
+    private final PurchaseOrderRepository poRepository;
 
     /**
      * 新しい商品を作成する。
@@ -420,6 +423,33 @@ public class ProductServiceImpl implements ProductService {
                 .status(HttpStatus.OK.value())
                 .message("取得に成功しました。")
                 .data(productInfoDetailDTO)
+                .build();
+    }
+
+    public ResponseDTO<List<SumReceivedGroupByProductDTO>> getSumReceivedQtyByPoGroupByProduct(Long poId) {
+
+        if (!poRepository.existsById(poId)) {
+            throw new NotFoundException("この注文書はは存在していません。");
+        }
+        List<Object[]> rows = stockHistoryRepository.sumReceivedQtyByPoGroupByProduct(poId);
+        List<SumReceivedGroupByProductDTO> result = new ArrayList<>();
+        for (Object[] row : rows) {
+            Long productId = (Long) row[0];
+            Long receivedQty = (Long) row[1];
+            String sku = (String) row[2];
+
+            SumReceivedGroupByProductDTO dto = SumReceivedGroupByProductDTO.builder()
+                    .productId(productId)
+                    .receivedQty(receivedQty)
+                    .sku(sku)
+                    .build();
+
+            result.add(dto);
+        }
+        return ResponseDTO.<List<SumReceivedGroupByProductDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("受領数量の集計が正常に取得されました。")
+                .data(result)
                 .build();
     }
 }

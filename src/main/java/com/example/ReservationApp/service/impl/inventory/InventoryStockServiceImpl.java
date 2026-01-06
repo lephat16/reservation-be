@@ -596,4 +596,6 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                 .data(result)
                 .build();
     }
+
+    
 }

@@ -6,6 +6,7 @@ import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
+import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
 
 public interface ProductService {
 
@@ -28,4 +29,6 @@ public interface ProductService {
     ResponseDTO<List<ProductInfoDTO>> getAllProductWithSupplierAndStock();
 
     ResponseDTO<ProductInfoDetailDTO> getProductInfoDetail(Long productId);
+    
+    ResponseDTO<List<SumReceivedGroupByProductDTO>> getSumReceivedQtyByPoGroupByProduct(Long poId);
 }
