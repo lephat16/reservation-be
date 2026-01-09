@@ -177,7 +177,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                 .orElseThrow(() -> new NotFoundException("この注文書は見つかりません。"));
                 PurchaseOrderDTO purchaseOrderDTO = purchaseOrderMapper.toDTO(purchaseOrder);
 
-                System.out.println(purchaseOrderDTO.getDetails());
                 // 詳細は別取得
                 List<PurchaseOrderDetailDTO> poDetailDTO = poDetailService.getDetailEntitysByOrder(purchaseOrderId);
                 purchaseOrderDTO.setDetails(poDetailDTO);

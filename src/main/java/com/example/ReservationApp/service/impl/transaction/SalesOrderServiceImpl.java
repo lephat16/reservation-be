@@ -21,8 +21,11 @@ import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.enums.OrderStatus;
+import com.example.ReservationApp.enums.UserRole;
+import com.example.ReservationApp.exception.InvalidActionException;
 import com.example.ReservationApp.exception.InvalidCredentialException;
 import com.example.ReservationApp.exception.NotFoundException;
+import com.example.ReservationApp.exception.UnauthorizedException;
 import com.example.ReservationApp.mapper.InventoryStockMapper;
 import com.example.ReservationApp.mapper.SalesOrderDetailMapper;
 import com.example.ReservationApp.mapper.SalesOrderMapper;
@@ -272,10 +275,17 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     @Override
     public ResponseDTO<Void> deleteSalesOrder(Long soId) {
 
-        if (!soRepository.existsById(soId)) {
-            throw new NotFoundException("この注文書は存在していません。");
+        SalesOrder so = soRepository.findById(soId)
+                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+        User currentUser = userService.getCurrentUserEntity();
+
+        if (!so.getStatus().equals(OrderStatus.NEW)) {
+            throw new InvalidActionException("注文書はすでに処理済みのため削除できません。");
         }
-        soRepository.deleteById(soId);
+        if (!so.getCreatedBy().equals(currentUser) && !currentUser.getRole().equals(UserRole.ADMIN)) {
+            throw new UnauthorizedException("削除する権限がありません。");
+        }
+        soRepository.delete(so);
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
                 .message("販売注文書が正常に削除されました。")

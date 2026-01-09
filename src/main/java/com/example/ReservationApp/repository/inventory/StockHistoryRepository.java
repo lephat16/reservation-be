@@ -13,117 +13,141 @@ import io.lettuce.core.dynamic.annotation.Param;
 
 public interface StockHistoryRepository extends JpaRepository<StockHistory, Long> {
 
-       
+    @Query("""
+            SELECT
+                sh.inventoryStock.product.id,
+                COALESCE(SUM(sh.changeQty), 0),
+                sp.supplierSku
+            FROM StockHistory sh
+            JOIN sh.inventoryStock s
+            JOIN s.product p
+            JOIN SupplierProduct sp ON sp.product.id = p.id
+            WHERE sh.refType = 'PO'
+            AND sh.refId = :poId
+            GROUP BY sh.inventoryStock.product.id, sp.supplierSku
+                    """)
+    List<Object[]> sumReceivedQtyByPoGroupByProduct(@Param("poId") Long poId);
 
-        @Query("""
-                        SELECT
-                            sh.inventoryStock.product.id,
-                            COALESCE(SUM(sh.changeQty), 0),
-                            sp.supplierSku
-                        FROM StockHistory sh
-                        JOIN sh.inventoryStock s
-                        JOIN s.product p
-                        JOIN SupplierProduct sp ON sp.product.id = p.id
-                        WHERE sh.refType = 'PO'
-                        AND sh.refId = :poId
-                        GROUP BY sh.inventoryStock.product.id, sp.supplierSku
-                                """)
-        List<Object[]> sumReceivedQtyByPoGroupByProduct(@Param("poId") Long poId);
+    @Query("""
+                SELECT sh.inventoryStock.product.id, COALESCE(SUM(sh.changeQty), 0)
+                FROM StockHistory sh
+                WHERE sh.refType = 'SO'
+                  AND sh.refId = :soId
+                GROUP BY sh.inventoryStock.product.id
+            """)
+    List<Object[]> sumDeliveredQtyBySoGroupByProduct(@Param("soId") Long soId);
 
-        @Query("""
-                            SELECT sh.inventoryStock.product.id, COALESCE(SUM(sh.changeQty), 0)
-                            FROM StockHistory sh
-                            WHERE sh.refType = 'SO'
-                              AND sh.refId = :soId
-                            GROUP BY sh.inventoryStock.product.id
-                        """)
-        List<Object[]> sumDeliveredQtyBySoGroupByProduct(@Param("soId") Long soId);
+    @Query("""
+            SELECT sh
+            FROM StockHistory sh
+            JOIN FETCH sh.inventoryStock s
+            JOIN FETCH s.product
+            JOIN FETCH s.warehouse
 
-        @Query("""
-                        SELECT sh
-                        FROM StockHistory sh
-                        JOIN FETCH sh.inventoryStock s
-                        JOIN FETCH s.product
-                        JOIN FETCH s.warehouse
+                """)
+    List<StockHistory> findAllWithStockProductWarehouse();
 
-                            """)
-        List<StockHistory> findAllWithStockProductWarehouse();
+    @Query("""
+            SELECT sh
+            FROM StockHistory sh
+            JOIN FETCH sh.inventoryStock s
+            JOIN FETCH s.product
+            JOIN FETCH s.warehouse
+            WHERE s.id = :inventoryStockId
+            """)
+    List<StockHistory> findByInventoryStock(Long inventoryStockId);
 
-        @Query("""
-                        SELECT sh
-                        FROM StockHistory sh
-                        JOIN FETCH sh.inventoryStock s
-                        JOIN FETCH s.product
-                        JOIN FETCH s.warehouse
-                        WHERE s.id = :inventoryStockId
-                        """)
-        List<StockHistory> findByInventoryStock(Long inventoryStockId);
+    @Query("""
+            SELECT sh
+            FROM StockHistory sh
+            JOIN FETCH sh.inventoryStock s
+            JOIN FETCH s.product
+            JOIN FETCH s.warehouse w
+            WHERE w.id = :warehouseId
+            """)
+    List<StockHistory> findByWarehouse(Long warehouseId);
 
-        @Query("""
-                        SELECT sh
-                        FROM StockHistory sh
-                        JOIN FETCH sh.inventoryStock s
-                        JOIN FETCH s.product
-                        JOIN FETCH s.warehouse w
-                        WHERE w.id = :warehouseId
-                        """)
-        List<StockHistory> findByWarehouse(Long warehouseId);
+    @Query("""
+            SELECT sh
+            FROM StockHistory sh
+            JOIN FETCH sh.inventoryStock s
+            JOIN FETCH s.product p
+            JOIN FETCH s.warehouse
+            WHERE p.id = :productId
+            """)
+    List<StockHistory> findByProduct(Long productId);
 
-        @Query("""
-                        SELECT sh
-                        FROM StockHistory sh
-                        JOIN FETCH sh.inventoryStock s
-                        JOIN FETCH s.product p
-                        JOIN FETCH s.warehouse
-                        WHERE p.id = :productId
-                        """)
-        List<StockHistory> findByProduct(Long productId);
-
-        @Query(value = """
-                        SELECT
-                            sh.created_at AS date,
-                            sh.type,
-                            sh.change_qty as changeQty
-                        FROM stock_histories sh
-                        JOIN  inventory_stocks ivs ON ivs.id = sh.inventory_stock_id
-                        JOIN  products p ON ivs.product_id = p.id
-                        WHERE p.id = :productId
-                                    """, nativeQuery = true)
-        List<Object[]> findHistoryWithQuantiyAndTypeByProductId(@Param("productId") Long productId);
-
-        @Query("""
-                        SELECT sh
-                        FROM StockHistory sh
-                        JOIN FETCH sh.inventoryStock s
-                        JOIN FETCH s.product p
-                        JOIN FETCH s.warehouse
-                        WHERE sh.createdAt >= :fromDate
-                        ORDER BY sh.createdAt DESC
-                        """)
-        List<StockHistory> findRecentStockHistory(@Param("fromDate") LocalDateTime fromDate);
-
-        @Query(value = """
-                        SELECT
-                            sh.id,
-                            wh.location,
-                            wh.name AS warehouse_name,
-                            sh.change_qty,
-                            sh.notes,
-                            p.name AS product_name,
-                            s.name AS supplier_name,
-                            sh.ref_type,
-                            sh.created_at,
-                            sp.supplier_sku
-                        FROM public.inventory_stocks ivs
-                        JOIN warehouses wh ON wh.id = ivs.warehouse_id
-                        JOIN stock_histories sh ON sh.inventory_stock_id = ivs.id
-                        JOIN products p ON p.id = ivs.product_id
-                        JOIN purchase_orders po ON po.id = sh.ref_id
-                        JOIN suppliers s ON s.id = po.supplier_id
-                        JOIN supplier_products sp ON sp.product_id = p.id
-                        WHERE po.id = :poId
-                        ORDER BY sh.created_at DESC
+    @Query(value = """
+            SELECT
+                sh.created_at AS date,
+                sh.type,
+                sh.change_qty as changeQty
+            FROM stock_histories sh
+            JOIN  inventory_stocks ivs ON ivs.id = sh.inventory_stock_id
+            JOIN  products p ON ivs.product_id = p.id
+            WHERE p.id = :productId
                         """, nativeQuery = true)
-        List<InventoryHistoryByPurchaseOrderFlatDTO> findInventoryHistoryByPurchaseOrder(@Param("poId") Long poId);
+    List<Object[]> findHistoryWithQuantiyAndTypeByProductId(@Param("productId") Long productId);
+
+    @Query("""
+            SELECT sh
+            FROM StockHistory sh
+            JOIN FETCH sh.inventoryStock s
+            JOIN FETCH s.product p
+            JOIN FETCH s.warehouse
+            WHERE sh.createdAt >= :fromDate
+            ORDER BY sh.createdAt DESC
+            """)
+    List<StockHistory> findRecentStockHistory(@Param("fromDate") LocalDateTime fromDate);
+
+    // @Query(value = """
+    // SELECT
+    // sh.id,
+    // wh.location,
+    // wh.name AS warehouse_name,
+    // sh.change_qty,
+    // sh.notes,
+    // p.name AS product_name,
+    // s.name AS supplier_name,
+    // sh.ref_type,
+    // sh.created_at,
+    // sp.supplier_sku
+    // FROM public.inventory_stocks ivs
+    // JOIN warehouses wh ON wh.id = ivs.warehouse_id
+    // JOIN stock_histories sh ON sh.inventory_stock_id = ivs.id
+    // JOIN products p ON p.id = ivs.product_id
+    // JOIN purchase_orders po ON po.id = sh.ref_id
+    // JOIN suppliers s ON s.id = po.supplier_id
+    // JOIN supplier_products sp ON sp.product_id = p.id
+    // WHERE po.id = :poId
+    // ORDER BY sh.created_at DESC
+    // """, nativeQuery = true)
+    @Query(value = """
+                                    SELECT
+                sh.id,
+                wh.location,
+                wh.name AS warehouse_name,
+                sh.change_qty,
+                sh.notes,
+                p.name AS product_name,
+                s.name AS supplier_name,
+                sh.ref_type,
+                sh.created_at,
+                sp.supplier_sku,
+                ivs.id AS inventory_stock_id
+            FROM stock_histories sh
+            JOIN inventory_stocks ivs ON sh.inventory_stock_id = ivs.id
+            JOIN warehouses wh ON wh.id = ivs.warehouse_id
+            JOIN products p ON p.id = ivs.product_id
+            JOIN purchase_orders po ON po.id = sh.ref_id
+            JOIN suppliers s ON s.id = po.supplier_id
+            JOIN supplier_products sp
+                ON sp.product_id = ivs.product_id
+               AND sp.supplier_id = po.supplier_id
+            WHERE po.id = :poId
+            ORDER BY sh.created_at DESC;
+
+                                    """, nativeQuery = true)
+    List<InventoryHistoryByPurchaseOrderFlatDTO> findInventoryHistoryByPurchaseOrder(@Param("poId") Long poId);
 
 }

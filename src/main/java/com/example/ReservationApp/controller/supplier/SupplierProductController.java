@@ -30,7 +30,6 @@ public class SupplierProductController {
         @PostMapping("/add")
         public ResponseEntity<ResponseDTO<SupplierProductDTO>> addSupplierProduct(
                         @RequestBody SupplierProductDTO supplierProductDTO) {
-                System.out.println(supplierProductDTO);
                 return ResponseEntity
                                 .ok(supplierProductService
                                                 .createSupplierProduct(supplierProductDTO.getSupplierId(),

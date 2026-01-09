@@ -164,7 +164,6 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                         request.getProductId(),
                         request.getWarehouseId())
                 .orElseGet(() -> {
-                    System.out.println("CREATING NEW STOCK");
                     InventoryStock newStock = new InventoryStock();
                     newStock.setProduct(product);
                     newStock.setWarehouse(warehouse);

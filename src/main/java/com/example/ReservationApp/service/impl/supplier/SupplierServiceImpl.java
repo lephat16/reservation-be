@@ -120,7 +120,6 @@ public class SupplierServiceImpl implements SupplierService {
         if (supplierDTO.getSupplierStatus() != null) {
             existingSupplier.setStatus(supplierDTO.getSupplierStatus());
         }
-        System.out.println(existingSupplier);
         Supplier updatedSupplier = supplierRepository.save(existingSupplier);
         return ResponseDTO.<SupplierDTO>builder()
                 .status(HttpStatus.OK.value())

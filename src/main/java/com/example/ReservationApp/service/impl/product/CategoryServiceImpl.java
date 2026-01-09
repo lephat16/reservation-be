@@ -107,7 +107,6 @@ public class CategoryServiceImpl implements CategoryService {
         public ResponseDTO<CategoryDTO> getCategoryByName(String name) {
                 Category category = categoryRepository.findByName(name)
                                 .orElseThrow(() -> new NotFoundException(("このカテゴリは存在していません")));
-                System.out.println(category.getName());
                 return ResponseDTO.<CategoryDTO>builder()
                                 .status(HttpStatus.OK.value())
                                 .message("成功しました。")
