@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.example.ReservationApp.entity.product.Product;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -38,6 +39,10 @@ public class InventoryStock {
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "supplier_product_id", nullable = false)
+    private SupplierProduct supplierProduct;
 
     @Column(nullable = false)
     private Integer quantity;

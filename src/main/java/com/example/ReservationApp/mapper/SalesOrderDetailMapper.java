@@ -14,11 +14,13 @@ public interface SalesOrderDetailMapper {
     @Mapping(target = "salesOrderId", source = "salesOrder.id")
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "sku", source = "supplierProduct.supplierSku")
     SalesOrderDetailDTO toDTO(SalesOrderDetail salesOrderDetail);
 
     List<SalesOrderDetailDTO> toDTOList(List<SalesOrderDetail> details);
 
-    @Mapping(target = "salesOrder", ignore = true)   
-    @Mapping(target = "product", ignore = true)         
+    @Mapping(target = "salesOrder", ignore = true)
+    @Mapping(target = "product", ignore = true)
+    @Mapping(target = "supplierProduct", ignore = true)
     SalesOrderDetail toEntity(SalesOrderDetailDTO salesOrderDetailDTO);
 }

@@ -3,6 +3,7 @@ package com.example.ReservationApp.entity.transaction;
 import java.math.BigDecimal;
 
 import com.example.ReservationApp.entity.product.Product;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.enums.OrderStatus;
 
 import jakarta.persistence.Column;
@@ -39,6 +40,11 @@ public class SalesOrderDetail {
     @ManyToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "supplier_product_id")
+    private SupplierProduct supplierProduct;
+    
 
     @Column(nullable = false)
     @Builder.Default

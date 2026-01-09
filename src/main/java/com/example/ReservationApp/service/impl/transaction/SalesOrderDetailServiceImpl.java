@@ -12,6 +12,7 @@ import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
 import com.example.ReservationApp.entity.product.Product;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
 import com.example.ReservationApp.enums.OrderStatus;
@@ -20,6 +21,7 @@ import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.SalesOrderDetailMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.product.ProductRepository;
+import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
 import com.example.ReservationApp.service.transaction.SalesOrderDetailService;
@@ -51,7 +53,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
 
         private final SalesOrderDetailRepository soDetailRepository;
         private final SalesOrderRepository soRepository;
-        private final ProductRepository productRepository;
+        private final SupplierProductRepository supplierProductRepository;
         private final SalesOrderDetailMapper soDetailMapper;
         private final InventoryStockRepository inventoryStockRepository;
 
@@ -86,20 +88,26 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                         throw new IllegalStateException("この注文書は編集できません。");
                 }
 
-                Product product = productRepository.findById(soDetailDTO.getProductId())
-                                .orElseThrow(() -> new NotFoundException("この商品は存在していません。"));
+                // Product product = productRepository.findById(soDetailDTO.getProductId())
+                //                 .orElseThrow(() -> new NotFoundException("この商品は存在していません。"));
+
+                SupplierProduct supplierProduct = supplierProductRepository.findBySupplierSku(soDetailDTO.getSku())
+                                .orElseThrow(() -> new NotFoundException("SKUが存在しません: " + soDetailDTO.getSku()));
 
                 // 既存明細があるか確認（同一注文＋同一商品）
-                Optional<SalesOrderDetail> existingProductInDetails = soDetailRepository
-                                .findBySalesOrderIdAndProductId(
-                                                salesOrderId,
-                                                product.getId());
+                // Optional<SalesOrderDetail> existingProductInDetails = soDetailRepository
+                //                 .findBySalesOrderIdAndProductId(
+                //                                 salesOrderId,
+                //                                 product.getId());
+
+                Optional<SalesOrderDetail> existingDetails = soDetailRepository
+                                .findBySalesOrderIdAndSupplierProductId(salesOrderId, supplierProduct.getId());
                 SalesOrderDetail soDetail;
                 int addedQty = soDetailDTO.getQty();
 
-                if (existingProductInDetails.isPresent()) {
+                if (existingDetails.isPresent()) {
                         // 既存明細がある場合
-                        soDetail = existingProductInDetails.get();
+                        soDetail = existingDetails.get();
 
                         // 単価不一致チェック
                         if (soDetail.getPrice().compareTo(soDetailDTO.getPrice()) != 0) {
@@ -111,27 +119,30 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                         soDetailRepository.save(soDetail);
                 } else {
                         // 新規明細作成
-                        soDetail = new SalesOrderDetail();
-                        soDetail.setSalesOrder(so);
-                        soDetail.setProduct(product);
-                        soDetail.setQty(addedQty);
-                        soDetail.setPrice(soDetailDTO.getPrice());
+                        soDetail = SalesOrderDetail.builder()
+                                        .salesOrder(so)
+                                        .product(supplierProduct.getProduct())
+                                        .supplierProduct(supplierProduct)
+                                        .qty(addedQty)
+                                        .price(soDetailDTO.getPrice())
+                                        .build();
                         soDetailRepository.save(soDetail);
                         so.getDetails().add(soDetail);
                 }
 
                 // 在庫チェック（全倉庫合計
-                int available = inventoryStockRepository.getAvailableStock(product.getId());
+                // int available = inventoryStockRepository.getAvailableStock(product.getId());
+                int available = inventoryStockRepository.getAvailableStockBySku(supplierProduct.getSupplierSku());
                 if (available < addedQty) {
                         throw new InvalidCredentialException(
-                                        "在庫が不足しています。productId=" + product.getId()
+                                        "在庫が不足しています。SKU=" + supplierProduct.getSupplierSku()
                                                         + ", required=" + addedQty
                                                         + ", available=" + available);
                 }
 
                 // 在庫引当（倉庫は特定しない
-                inventoryStockRepository.reserveStock(
-                                product.getId(),
+                inventoryStockRepository.reserveStockBySku(
+                                supplierProduct.getSupplierSku(),
                                 addedQty);
 
                 // 注文合計金額再計算

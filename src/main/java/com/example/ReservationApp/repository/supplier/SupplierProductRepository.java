@@ -1,6 +1,7 @@
 package com.example.ReservationApp.repository.supplier;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,7 +14,13 @@ import io.lettuce.core.dynamic.annotation.Param;
 
 public interface SupplierProductRepository extends JpaRepository<SupplierProduct, Long> {
 
+    Optional <SupplierProduct> findByProductIdAndSupplierId(Long productId, Long SupplierId);
+
     List<SupplierProduct> findBySupplierId(Long supplierId);
+
+    List<SupplierProduct> findAllBySupplierSkuIn(List <String> skus);
+
+    Optional<SupplierProduct> findBySupplierSku(String sku);
 
     List<SupplierProduct> findBySupplierIdAndStatus(Long supplierId, SupplierProductStatus status);
 

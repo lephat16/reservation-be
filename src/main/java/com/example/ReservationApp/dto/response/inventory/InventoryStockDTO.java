@@ -20,6 +20,7 @@ public class InventoryStockDTO {
     private Long id;
     private Long productId;
     private String productName;
+    private String sku;
     private String warehouseName;
     private Integer quantity;
     private Integer reservedQuantity ;

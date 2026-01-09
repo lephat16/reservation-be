@@ -16,7 +16,7 @@ import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
-import com.example.ReservationApp.entity.product.Product;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
 import com.example.ReservationApp.entity.user.User;
@@ -30,7 +30,7 @@ import com.example.ReservationApp.mapper.InventoryStockMapper;
 import com.example.ReservationApp.mapper.SalesOrderDetailMapper;
 import com.example.ReservationApp.mapper.SalesOrderMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
-import com.example.ReservationApp.repository.product.ProductRepository;
+import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
 import com.example.ReservationApp.service.impl.auth.UserServiceImpl;
 import com.example.ReservationApp.service.transaction.SalesOrderDetailService;
@@ -45,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SalesOrderServiceImpl implements SalesOrderService {
 
     private final SalesOrderRepository soRepository;
-    private final ProductRepository productRepository;
+    private final SupplierProductRepository supplierProductRepository;
     private final SalesOrderMapper soMapper;
     private final SalesOrderDetailMapper soDetailMapper;
     private final InventoryStockMapper inventoryStockMapper;
@@ -74,62 +74,67 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         so.setCreatedBy(currentUser);
         so.setStatus(OrderStatus.NEW);
 
-        // 注文詳細から商品IDリスト取得
-        List<Long> productIds = salesOrderDTO.getDetails().stream()
-                .map(SalesOrderDetailDTO::getProductId)
+     
+        List<String> skus = salesOrderDTO.getDetails().stream()
+                .map(SalesOrderDetailDTO::getSku)
                 .distinct()
                 .toList();
 
-        // DBから商品情報 & 在庫情報取得
-        Map<Long, Product> productMap = productRepository.findAllById(productIds)
-                .stream()
-                .collect(Collectors.toMap(Product::getId, p -> p));
+       
 
-        Map<Long, List<InventoryStockDTO>> stockMap = inventoryStockRepository.findByProductIdIn(productIds)
+        Map<String, SupplierProduct> skuMap = supplierProductRepository.findAllBySupplierSkuIn(skus)
                 .stream()
-                .map(stock -> inventoryStockMapper.toDTO(stock))
-                .collect(Collectors.groupingBy(InventoryStockDTO::getProductId));
+                .collect(Collectors.toMap(SupplierProduct::getSupplierSku, sp -> sp));
 
-        Map<Long, SalesOrderDetail> detailMap = new HashMap<>();
+       
+
+        Map<String, List<InventoryStockDTO>> stockMap = inventoryStockRepository.findBySupplierProduct_SupplierSkuIn(skus)
+                .stream()
+                .map(inventoryStockMapper::toDTO)
+                .collect(Collectors.groupingBy(InventoryStockDTO::getSku));
+
+        Map<String, SalesOrderDetail> detailMap = new HashMap<>();
         List<SalesOrderDetail> details = new ArrayList<>();
 
         // 注文詳細ごとのチェック・合計数量計算
         for (SalesOrderDetailDTO detailDTO : salesOrderDTO.getDetails()) {
-            Product product = productMap.get(detailDTO.getProductId());
-            if (product == null) {
-                throw new NotFoundException("ID=" + detailDTO.getProductId() + "の商品は存在していません。");
+           
+            SupplierProduct supplierProduct = skuMap.get(detailDTO.getSku());
+            if (supplierProduct == null) {
+                throw new NotFoundException("SKUが存在しません: " + detailDTO.getSku());
             }
             // 同一商品の重複チェックと数量累積
-            SalesOrderDetail existing = detailMap.get(product.getId());
+            SalesOrderDetail existing = detailMap.get(supplierProduct.getSupplierSku());
             if (existing != null) {
                 if (existing.getPrice().compareTo(detailDTO.getPrice()) != 0) {
                     throw new IllegalStateException(
-                            "同一商品の単価が一致していません。 productId=" + product.getId());
+                            "同一商品の単価が一致していません。 SKU=" + supplierProduct.getSupplierSku());
                 }
                 existing.setQty(existing.getQty() + detailDTO.getQty());
             } else {
                 SalesOrderDetail detail = soDetailMapper.toEntity(detailDTO);
-                detail.setProduct(product);
+                detail.setProduct(supplierProduct.getProduct());
+                detail.setSupplierProduct(supplierProduct);
                 detail.setSalesOrder(so);
                 details.add(detail);
-                detailMap.put(product.getId(), detail);
+                detailMap.put(supplierProduct.getSupplierSku(), detail);
             }
 
             // 在庫の有無チェック
-            List<InventoryStockDTO> stocks = stockMap.get(product.getId());
+            List<InventoryStockDTO> stocks = stockMap.get(supplierProduct.getSupplierSku());
             if (stocks == null || stocks.isEmpty()) {
-                throw new InvalidCredentialException("在庫情報が存在しません。productId=" + product.getId());
+                throw new InvalidCredentialException("在庫情報が存在しません。SKU=" + supplierProduct.getSupplierSku());
             }
 
             // 在庫数計算（総数-予約済み） & 必要数チェック
             int total = stocks.stream().mapToInt(InventoryStockDTO::getQuantity).sum();
             int reserved = stocks.stream().mapToInt(InventoryStockDTO::getReservedQuantity).sum();
             int available = total - reserved;
-            int required = detailMap.get(product.getId()).getQty();
+            int required = detailMap.get(supplierProduct.getSupplierSku()).getQty();
 
             if (available < required) {
                 throw new InvalidCredentialException(
-                        "在庫が不足しています。productId=" + product.getId() +
+                        "在庫が不足しています。SKU=" + supplierProduct.getSupplierSku() +
                                 ", required=" + required +
                                 ", available=" + available);
             }
@@ -138,7 +143,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         // 在庫予約処理
         for (SalesOrderDetail detail : details) {
             int remaining = detail.getQty();
-            List<InventoryStockDTO> stocks = stockMap.get(detail.getProduct().getId());
+            List<InventoryStockDTO> stocks = stockMap.get(detail.getSupplierProduct().getSupplierSku());
 
             List<Long> stockIds = stocks.stream().map(InventoryStockDTO::getId).toList();
             List<InventoryStock> stockEntities = inventoryStockRepository.findAllByIdsWithWarehouse(stockIds);
@@ -165,7 +170,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
             if (remaining > 0) {
                 throw new InvalidCredentialException(
-                        "在庫が不足しています。productId=" + detail.getProduct().getId());
+                        "在庫が不足しています。productId=" + detail.getSupplierProduct().getSupplierSku());
             }
         }
 

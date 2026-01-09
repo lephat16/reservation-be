@@ -24,6 +24,8 @@ import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 import com.example.ReservationApp.entity.inventory.Warehouse;
 import com.example.ReservationApp.entity.product.Product;
+import com.example.ReservationApp.entity.supplier.Supplier;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
@@ -39,6 +41,7 @@ import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.inventory.WarehouseRepository;
 import com.example.ReservationApp.repository.product.ProductRepository;
+import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
@@ -71,6 +74,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     private final PurchaseOrderDetailRepository poDetailRepository;
     private final SalesOrderDetailRepository salesOrderDetailRepository;
     private final StockHistoryRepository stockHistoryRepository;
+    private final SupplierProductRepository supplierProductRepository;
 
     /**
      * すべての在庫情報を取得します。
@@ -372,7 +376,15 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                     .filter(i -> i.getDetailId().equals(detailId))
                     .findFirst()
                     .orElseThrow(() -> new NotFoundException("注文明細IDに対応する受領アイテムが見つかりません: detailId=" + detailId));
-
+            Long warehouseId = item.getWarehouseId();
+            Product product = detail.getProduct();
+            Supplier supplier = po.getSupplier();
+            SupplierProduct sp = supplierProductRepository.findByProductIdAndSupplierId(
+                    product.getId(),
+                    supplier.getId())
+                    .orElseThrow(() -> new NotFoundException(
+                            "SupplierProductが存在しません。productId=" + product.getId() +
+                                    ", supplierId=" + supplier.getId()));
             Long productId = detail.getProduct().getId();
             int receivedSoFar = receivedQtyMap.getOrDefault(productId, 0);
             int totalAfterReceive = receivedSoFar + totalReceivedInRequest;
@@ -404,27 +416,27 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                     .orElseGet(() -> {
                         InventoryStock newStock = new InventoryStock();
                         newStock.setProduct(detail.getProduct());
-                        Warehouse wh = warehouseRepository.findById(
-                                receivedItems.stream()
-                                        .filter(i -> i.getDetailId().equals(detailId))
-                                        .findFirst()
-                                        .get()
-                                        .getWarehouseId())
-                                .orElseThrow(() -> new NotFoundException(
-                                        "倉庫が存在していません。, ID=" + detailId));
+                        Warehouse wh = warehouseRepository.findById(warehouseId)
+                                .orElseThrow(() -> new NotFoundException("倉庫が存在していません。, ID=" + warehouseId));
                         newStock.setWarehouse(wh);
                         newStock.setQuantity(0);
+
+                        newStock.setSupplierProduct(sp);
                         return inventoryStockRepository.save(newStock);
                     });
 
+            stock.setSupplierProduct(sp);
+            inventoryStockRepository.save(stock);
+            
             StockHistory history = new StockHistory();
             history.setInventoryStock(stock);
             history.setChangeQty(totalReceivedInRequest);
             history.setType(StockChangeType.IN);
             history.setRefType(RefType.PO);
             history.setRefId(po.getId());
-            history.setNotes(item.getNote() != null ? item.getNote() : "発注書からの受領" + //
-                                "");
+            history.setNotes(item.getNote() != null ? item.getNote()
+                    : "発注書からの受領" + //
+                            "");
             stockHistoryRepository.save(history);
 
             stock.setQuantity(stock.getQuantity() + totalReceivedInRequest);
@@ -596,5 +608,4 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                 .build();
     }
 
-    
 }

@@ -13,6 +13,7 @@ public interface InventoryStockMapper {
 
     @Mapping(target = "productId", source = "product.id")
     @Mapping(target = "productName", source = "product.name")
+    @Mapping(target = "sku", source = "supplierProduct.supplierSku")
     @Mapping(target = "warehouseName", source = "warehouse.name")
     @Mapping(target = "stockHistories", ignore = true) // handle separately
     InventoryStockDTO toDTO(InventoryStock stock);
@@ -21,6 +22,7 @@ public interface InventoryStockMapper {
 
     @Mapping(target = "warehouse", ignore = true)
     @Mapping(target = "product", ignore = true)
+    @Mapping(target = "supplierProduct", ignore = true)
     @Mapping(target = "stockHistories", ignore = true)
     InventoryStock toEntity(InventoryStockDTO dto);
 }
