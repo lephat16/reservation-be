@@ -54,14 +54,14 @@ public class CategoryServiceImpl implements CategoryService {
         @Override
         public ResponseDTO<CategoryDTO> createCategory(CategoryDTO categoryDTO) {
                 if (categoryRepository.existsByname(categoryDTO.getName())) {
-                        throw new AlreadyExistException("このカテゴリはすでに存在しています。");
+                        throw new AlreadyExistException("このカテゴリはすでに存在しています");
                 }
                 Category newCategory = categoryMapper.toEntity(categoryDTO);
                 categoryRepository.save(newCategory);
                 categoryDTO.setId(newCategory.getId());
                 return ResponseDTO.<CategoryDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("新しいカテゴリの追加に成功しました。")
+                                .message("新しいカテゴリの追加に成功しました")
                                 .data(categoryDTO)
                                 .build();
         }
@@ -78,7 +78,7 @@ public class CategoryServiceImpl implements CategoryService {
                                 .map(category -> categoryMapper.toDTO(category)).collect(Collectors.toList());
                 return ResponseDTO.<List<CategoryDTO>>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("全てのカテゴリの取得に成功しました。")
+                                .message("全てのカテゴリの取得に成功しました")
                                 .data(categoryDTOs)
                                 .build();
         }
@@ -97,7 +97,7 @@ public class CategoryServiceImpl implements CategoryService {
 
                 return ResponseDTO.<CategoryDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("成功しました。")
+                                .message("成功しました")
                                 .data(categoryMapper.toDTO(category))
                                 .build();
 
@@ -109,7 +109,7 @@ public class CategoryServiceImpl implements CategoryService {
                                 .orElseThrow(() -> new NotFoundException(("このカテゴリは存在していません")));
                 return ResponseDTO.<CategoryDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("成功しました。")
+                                .message("成功しました")
                                 .data(categoryMapper.toDTO(category))
                                 .build();
 
@@ -127,7 +127,7 @@ public class CategoryServiceImpl implements CategoryService {
         @Override
         public ResponseDTO<CategoryDTO> updateCategory(Long id, CategoryDTO categoryDTO) {
                 Category existingCategory = categoryRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException("このカテゴリは見つかりません。"));
+                                .orElseThrow(() -> new NotFoundException("このカテゴリは見つかりません"));
 
                 if (categoryDTO.getName() != null && !categoryDTO.getName().isBlank()) {
                         existingCategory.setName(categoryDTO.getName());
@@ -146,7 +146,7 @@ public class CategoryServiceImpl implements CategoryService {
 
                 return ResponseDTO.<CategoryDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("編集に成功しました。")
+                                .message("編集に成功しました")
                                 .data(categoryMapper.toDTO(existingCategory))
                                 .build();
         }
@@ -161,7 +161,7 @@ public class CategoryServiceImpl implements CategoryService {
         @Override
         public ResponseDTO<Void> deleteCategory(Long id) {
                 if (!categoryRepository.existsById(id)) {
-                        throw new NotFoundException("このカテゴリはありません。");
+                        throw new NotFoundException("このカテゴリはありません");
                 }
                 try {
                         categoryRepository.deleteById(id);
@@ -176,12 +176,12 @@ public class CategoryServiceImpl implements CategoryService {
                         // 商品がこのカテゴリを参照している場合に発生
                         // DB制約違反を業務例外に変換
                         throw new CannotDeleteException(
-                                        "このカテゴリに紐づく商品が存在するため、削除できません。");
+                                        "このカテゴリに紐づく商品が存在するため、削除できません");
                 }
 
                 return ResponseDTO.<Void>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("削除に成功しました。")
+                                .message("削除に成功しました")
                                 .build();
         }
 
@@ -197,7 +197,7 @@ public class CategoryServiceImpl implements CategoryService {
 
                 return ResponseDTO.<List<CategoryDTO>>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("成功しました。")
+                                .message("成功しました")
                                 .data(categoryDTOs)
                                 .build();
         }
@@ -208,7 +208,7 @@ public class CategoryServiceImpl implements CategoryService {
 
                 return ResponseDTO.<List<CategorySummariesDTO>>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("取得に成功しました。")
+                                .message("取得に成功しました")
                                 .data(summaryDTOs)
                                 .build();
         }
@@ -227,7 +227,7 @@ public class CategoryServiceImpl implements CategoryService {
                                 .build();
                 return ResponseDTO.<CategorySummaryDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("取得に成功しました。")
+                                .message("取得に成功しました")
                                 .data(categorySummaryDTO)
                                 .build();
         }

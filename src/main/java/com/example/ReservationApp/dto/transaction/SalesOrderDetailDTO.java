@@ -24,14 +24,14 @@ public class SalesOrderDetailDTO {
     private Long productId;
     private Long salesOrderId;
     private String productName;
-    @NotNull(message = "数量は必須です。")
-    @Positive(message = "数量は0より大きくなければなりません。")
+    @NotNull(message = "数量は必須です")
+    @Positive(message = "数量は0より大きくなければなりません")
     private Integer qty;
 
     private Integer deliveredQty;
 
-    @NotNull(message = "価格は必須です。")
-    @DecimalMin(value = "0.0", inclusive = false, message = "価格は0より大きくなければなりません。")
+    @NotNull(message = "価格は必須です")
+    @DecimalMin(value = "0.0", inclusive = false, message = "価格は0より大きくなければなりません")
     private BigDecimal price;
     private OrderStatus status;
     private String sku;

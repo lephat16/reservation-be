@@ -1,6 +1,5 @@
 package com.example.ReservationApp.controller.transaction;
 
-
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -24,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/transactions/")
 @RequiredArgsConstructor
 public class SalesOrderController {
-    
+
     private final SalesOrderService salesOrderService;
 
     @PostMapping("/sales/add")
@@ -50,8 +49,20 @@ public class SalesOrderController {
         return ResponseEntity.ok(salesOrderService.updateSalesOrder(soId, salesOrderDTO));
     }
 
+    @PutMapping("/sales/update-qty-and-desc/{soId}")
+    ResponseEntity<ResponseDTO<SalesOrderDTO>> updateSalesOrderQuantityAndDescription(
+            @PathVariable Long soId,
+            @Valid @RequestBody SalesOrderDTO salesOrderDTO) {
+        return ResponseEntity.ok(salesOrderService.updateSalesOrderQuantityAndDescription(soId, salesOrderDTO));
+    }
+
     @DeleteMapping("/sales/delete/{soId}")
     ResponseEntity<ResponseDTO<Void>> deleteSalesOrder(@PathVariable Long soId) {
         return ResponseEntity.ok(salesOrderService.deleteSalesOrder(soId));
+    }
+
+    @PutMapping("/sales/prepare/{soId}")
+    ResponseEntity<ResponseDTO<SalesOrderDTO>> prepareOrder(@PathVariable Long soId) {
+        return ResponseEntity.ok(salesOrderService.prepareOrder(soId));
     }
 }

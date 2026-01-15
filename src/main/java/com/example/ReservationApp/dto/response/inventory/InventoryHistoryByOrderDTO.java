@@ -2,12 +2,17 @@ package com.example.ReservationApp.dto.response.inventory;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
-public class InventoryHistoryByPurchaseOrderDTO {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class InventoryHistoryByOrderDTO {
     private Long id;
     private String location;
     private String warehouseName;
@@ -18,4 +23,6 @@ public class InventoryHistoryByPurchaseOrderDTO {
     private String refType;
     private LocalDateTime createdAt;
     private String supplierSku;
+    private Long inventoryStockId;
+    private String customerName;
 }

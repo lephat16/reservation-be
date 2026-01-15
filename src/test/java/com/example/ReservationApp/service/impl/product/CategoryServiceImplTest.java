@@ -65,7 +65,7 @@ class CategoryServiceImplTest {
         ResponseDTO<CategoryDTO> response = categoryService.createCategory(categoryDTO);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("新しいカテゴリの追加に成功しました。", response.getMessage());
+        assertEquals("新しいカテゴリの追加に成功しました", response.getMessage());
         assertNotNull(response.getData());
     }
 
@@ -111,7 +111,7 @@ class CategoryServiceImplTest {
         ResponseDTO<CategoryDTO> response = categoryService.updateCategory(1L, updateDTO);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("編集に成功しました。", response.getMessage());
+        assertEquals("編集に成功しました", response.getMessage());
     }
 
     @Test
@@ -123,6 +123,6 @@ class CategoryServiceImplTest {
         ResponseDTO<Void> response = categoryService.deleteCategory(1L);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("削除に成功しました。", response.getMessage());
+        assertEquals("削除に成功しました", response.getMessage());
     }
 }

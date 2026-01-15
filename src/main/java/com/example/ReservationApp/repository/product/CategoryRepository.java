@@ -21,22 +21,22 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findByStatus(CategoryStatus status);
 
     @Query(value = """
-                SELECT
-                     p.name AS productName,
-                    s.id AS supplierId,
-                    s.name AS supplierName,
-                    sp.current_price AS price,
-                    i.quantity AS quantity,
-                    w.name AS warehouse
-                FROM categories c
-                JOIN products p ON p.category_id = c.id
-                LEFT JOIN supplier_products sp ON sp.product_id = p.id
-                INNER JOIN suppliers s ON s.id = sp.supplier_id
-                LEFT JOIN inventory_stocks i ON i.product_id = p.id
-                LEFT JOIN warehouses w ON w.id = i.warehouse_id
-                WHERE c.id = :categoryId
-                ORDER BY p.name, s.name
-                                """, nativeQuery = true)
+            SELECT
+                 p.name AS productName,
+                s.id AS supplierId,
+                s.name AS supplierName,
+                sp.current_price AS price,
+                i.quantity AS quantity,
+                w.name AS warehouse
+            FROM categories c
+            JOIN products p ON p.category_id = c.id
+            LEFT JOIN supplier_products sp ON sp.product_id = p.id
+            INNER JOIN suppliers s ON s.id = sp.supplier_id
+            LEFT JOIN inventory_stocks i ON i.product_id = p.id
+            LEFT JOIN warehouses w ON w.id = i.warehouse_id
+            WHERE c.id = :categoryId
+            ORDER BY p.name, s.name
+                            """, nativeQuery = true)
     List<CategorySummaryFlatDTO> getCategorySummaryById(@Param("categoryId") Long categoryId);
 
     @Query(value = """
@@ -55,5 +55,4 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             """, nativeQuery = true)
     List<CategorySummariesDTO> getAllCategorySummary();
 
-    
 }

@@ -11,8 +11,8 @@ import lombok.Data;
 @Builder
 public class ReceiveStockResultDTO {
     
-    private Long purchaseOrderId;
-    private OrderStatus poStatus;
+    private Long orderId;
+    private OrderStatus status;
     private List<Long> completedDetailIds;     
     private List<StockHistoryDTO> stockHistories;
 }

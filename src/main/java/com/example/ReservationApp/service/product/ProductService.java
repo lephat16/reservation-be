@@ -3,9 +3,11 @@ package com.example.ReservationApp.service.product;
 import java.util.List;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
+import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
 
 public interface ProductService {
@@ -31,4 +33,6 @@ public interface ProductService {
     ResponseDTO<ProductInfoDetailDTO> getProductInfoDetail(Long productId);
     
     ResponseDTO<List<SumReceivedGroupByProductDTO>> getSumReceivedQtyByPoGroupByProduct(Long poId);
+
+    ResponseDTO<List<ProductWithSkuByCategoryDTO>> getAllSupllierProductWithSkuByCategory(Long categoryId);
 }

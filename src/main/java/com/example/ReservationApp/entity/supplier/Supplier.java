@@ -36,11 +36,11 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "名前は必須です。")
+    @NotBlank(message = "名前は必須です")
     private String name;
-    @NotBlank(message = "連絡先情報は必須です。")
+    @NotBlank(message = "連絡先情報は必須です")
     private String contactInfo;
-    @NotBlank(message = "住所は必須です。")
+    @NotBlank(message = "住所は必須です")
     private String address;
 
     @Enumerated(EnumType.STRING)

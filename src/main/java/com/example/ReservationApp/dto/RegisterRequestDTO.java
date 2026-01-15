@@ -17,13 +17,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RegisterRequestDTO {
     
-    @NotBlank(message = "名前は必須です。")
+    @NotBlank(message = "名前は必須です")
     private String name;
-    @NotBlank(message = "メールアドレスは必須です。")
+    @NotBlank(message = "メールアドレスは必須です")
     private String email;
-    @NotBlank(message = "パスワードは必須です。")
+    @NotBlank(message = "パスワードは必須です")
     private String password;
-    @NotBlank(message = "電話番号は必須です。")
+    @NotBlank(message = "電話番号は必須です")
     private String phoneNumber;
 
     private UserRole role;

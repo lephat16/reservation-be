@@ -85,10 +85,10 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 // 仕入れ先の取得（商品とカテゴリーも一括ロード）
                 Supplier supplier = supplierRepository
                                 .findSupplierWithProductsAndCategory(purchaseOrderDTO.getSupplierId())
-                                .orElseThrow(() -> new NotFoundException("この仕入先は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この仕入先は存在していません"));
                 // 仕入れ先に商品が存在するかチェック
                 if (supplier.getSupplierProducts() == null || supplier.getSupplierProducts().isEmpty()) {
-                        throw new NotFoundException("この仕入先には商品がありません。");
+                        throw new NotFoundException("この仕入先には商品がありません");
                 }
                 // ログインユーザー取得
                 User currentUser = userService.getCurrentUserEntity();
@@ -102,7 +102,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 List<PurchaseOrderDetail> details = new ArrayList<>();
                 for (PurchaseOrderDetailDTO detailDTO : purchaseOrderDTO.getDetails()) {
                         Product product = productRepository.findById(detailDTO.getProductId())
-                                        .orElseThrow(() -> new NotFoundException("この商品は存在していません。"));
+                                        .orElseThrow(() -> new NotFoundException("この商品は存在していません"));
                         PurchaseOrderDetail existing = detailMap.get(product.getId());
                         if (existing != null) {
                                 if (existing.getCost().compareTo(detailDTO.getCost()) != 0) {
@@ -128,7 +128,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 poDTO.setDetails(poDetailMapper.toDTOList(details));
                 return ResponseDTO.<PurchaseOrderDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("注文書が正常に作成されました。")
+                                .message("注文書が正常に作成されました")
                                 .data(poDTO)
                                 .build();
 
@@ -159,7 +159,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
                 return ResponseDTO.<List<PurchaseOrderDTO>>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("注文書一覧が正常に取得されました。")
+                                .message("注文書一覧が正常に取得されました")
                                 .data(purchaseOrderDTOs)
                                 .build();
         }
@@ -174,7 +174,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         public ResponseDTO<PurchaseOrderDTO> getPurchaseOrderById(Long purchaseOrderId) {
 
                 PurchaseOrder purchaseOrder = purchaseOrderRepository.findByIdWithDetails(purchaseOrderId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は見つかりません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は見つかりません"));
                 PurchaseOrderDTO purchaseOrderDTO = purchaseOrderMapper.toDTO(purchaseOrder);
 
                 // 詳細は別取得
@@ -182,7 +182,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 purchaseOrderDTO.setDetails(poDetailDTO);
                 return ResponseDTO.<PurchaseOrderDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("注文書が正常に取得されました。")
+                                .message("注文書が正常に取得されました")
                                 .data(purchaseOrderDTO)
                                 .build();
         }
@@ -200,7 +200,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                         PurchaseOrderDTO purchaseOrderDTO) {
 
                 PurchaseOrder po = purchaseOrderRepository.findById(poId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
                 if (purchaseOrderDTO.getStatus() != null) {
                         po.setStatus(purchaseOrderDTO.getStatus());
                 }
@@ -213,7 +213,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 poDTO.setDetails(poDetailMapper.toDTOList(po.getDetails()));
                 return ResponseDTO.<PurchaseOrderDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("購入注文が正常に更新されました。")
+                                .message("購入注文が正常に更新されました")
                                 .data(purchaseOrderMapper.toDTO(po))
                                 .build();
         }
@@ -224,10 +224,10 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                         PurchaseOrderDTO purchaseOrderDTO) {
 
                 PurchaseOrder po = purchaseOrderRepository.findById(poId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
 
                 if (po.getStatus() != OrderStatus.NEW) {
-                        throw new IllegalStateException("NEWの状態のみ更新可能です。");
+                        throw new IllegalStateException("NEWの状態のみ更新可能です");
                 }
 
                 if (purchaseOrderDTO.getDescription() != null && !purchaseOrderDTO.getDescription().isBlank()) {
@@ -246,7 +246,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                         poDetaiRepository.save(detail);
                                 } else {
                                         throw new IllegalStateException(
-                                                        "POに存在しない商品は更新できません。 productId=" + detailDTO.getProductId());
+                                                        "POに存在しない商品は更新できません。 sku=" + detailDTO.getSku());
                                 }
                         }
                 }
@@ -256,7 +256,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 poDTO.setDetails(poDetailMapper.toDTOList(po.getDetails()));
                 return ResponseDTO.<PurchaseOrderDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("購入注文が正常に更新されました。")
+                                .message("購入注文が正常に更新されました")
                                 .data(poDTO)
                                 .build();
         }
@@ -271,20 +271,20 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         public ResponseDTO<Void> deletePurchaseOrder(Long poId) {
 
                 PurchaseOrder po = purchaseOrderRepository.findById(poId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
 
                 User currentUser = userService.getCurrentUserEntity();
                 if (!po.getStatus().equals(OrderStatus.NEW)) {
-                        throw new InvalidActionException("注文書はすでに処理済みのため削除できません。");
+                        throw new InvalidActionException("注文書はすでに処理済みのため削除できません");
                 }
                 if (!po.getCreatedBy().equals(currentUser) && !currentUser.getRole().equals(UserRole.ADMIN)) {
-                        throw new UnauthorizedException("削除する権限がありません。");
+                        throw new UnauthorizedException("削除する権限がありません");
                 }
 
                 purchaseOrderRepository.delete(po);
                 return ResponseDTO.<Void>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("購入注文が正常に削除されました。")
+                                .message("購入注文が正常に削除されました")
                                 .build();
         }
 
@@ -298,7 +298,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         public ResponseDTO<PurchaseOrderDTO> getPurchaseOrderDetailsByPOIdWithSku(Long purchaseOrderId) {
 
                 PurchaseOrder purchaseOrder = purchaseOrderRepository.findById(purchaseOrderId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
                 List<PurchaseOrderDetailWithSkuFlatDTO> podFlat = poDetaiRepository
                                 .findDetailsWithSupplierSku(purchaseOrderId);
                 List<PurchaseOrderDetailDTO> poDetails = podFlat.stream()
@@ -317,7 +317,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 purchaseOrderDTO.setDetails(poDetails);
                 return ResponseDTO.<PurchaseOrderDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("注文書が正常に取得されました。")
+                                .message("注文書が正常に取得されました")
                                 .data(purchaseOrderDTO)
                                 .build();
         }
@@ -326,22 +326,22 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         public ResponseDTO<PurchaseOrderDTO> placeOrder(Long purchaseOrderId) {
 
                 PurchaseOrder po = purchaseOrderRepository.findById(purchaseOrderId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
 
                 if (po.getStatus() != OrderStatus.NEW) {
-                        throw new IllegalStateException("この注文書はすでに処理中です。");
+                        throw new IllegalStateException("この注文書はすでに処理中です");
                 }
 
                 if (po.getDetails() == null || po.getDetails().isEmpty()) {
-                        throw new IllegalStateException("この注文書には商品が含まれていません。");
+                        throw new IllegalStateException("この注文書には商品が含まれていません");
                 }
 
                 for (PurchaseOrderDetail detail : po.getDetails()) {
                         if (detail.getQty() == null || detail.getQty() <= 0) {
-                                throw new IllegalStateException("商品「" + detail.getProduct().getName() + "」の数量が無効です。");
+                                throw new IllegalStateException("商品「" + detail.getProduct().getName() + "」の数量が無効です");
                         }
                         if (detail.getCost() == null || detail.getCost().compareTo(BigDecimal.ZERO) <= 0) {
-                                throw new IllegalStateException("商品「" + detail.getProduct().getName() + "」の単価が無効です。");
+                                throw new IllegalStateException("商品「" + detail.getProduct().getName() + "」の単価が無効です");
                         }
                         detail.setStatus(OrderStatus.PENDING);
                 }
@@ -352,7 +352,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 PurchaseOrderDTO poDTO = purchaseOrderMapper.toDTO(po);
                 return ResponseDTO.<PurchaseOrderDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("注文書の状態が正常に更新されました。")
+                                .message("注文書の状態が正常に更新されました")
                                 .data(poDTO)
                                 .build();
 

@@ -33,7 +33,7 @@ public class ProductDTO {
     private String unit;
     private ProductStatus status;
 
-    @NotBlank(message = "カテゴリー名は必須です。")
+    @NotBlank(message = "カテゴリー名は必須です")
     private String categoryName; // flatten from Product -> Category
     private Integer totalStock;
 

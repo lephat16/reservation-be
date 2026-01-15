@@ -147,6 +147,6 @@ class SalesOrderServiceImplTest {
         ResponseDTO<SalesOrderDTO> response = soService.createSalesOrder(salesOrderDTO);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("販売注文が正常に作成されました。", response.getMessage());
+        assertEquals("販売注文が正常に作成されました", response.getMessage());
     }
 }

@@ -17,6 +17,7 @@ import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
+import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
 import com.example.ReservationApp.service.product.ProductService;
 
@@ -94,6 +95,11 @@ public class ProductController {
     public ResponseEntity<ResponseDTO<List<SumReceivedGroupByProductDTO>>> getSumReceivedQtyByPoGroupByProduct(@PathVariable Long poId) {
 
         return ResponseEntity.ok(productService.getSumReceivedQtyByPoGroupByProduct(poId));
+    }
+    @GetMapping("/with-sku-by-category/{categoryId}")
+    public ResponseEntity<ResponseDTO<List<ProductWithSkuByCategoryDTO>>> getAllSupllierProductWithSkuByCategory(@PathVariable Long categoryId) {
+
+        return ResponseEntity.ok(productService.getAllSupllierProductWithSkuByCategory(categoryId));
     }
 
 

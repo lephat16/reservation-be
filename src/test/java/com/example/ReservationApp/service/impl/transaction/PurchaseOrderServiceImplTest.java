@@ -125,7 +125,7 @@ public class PurchaseOrderServiceImplTest {
         ResponseDTO<PurchaseOrderDTO> response = poService.createPurchaseOrder(poDTO);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("注文書が正常に作成されました。", response.getMessage());
+        assertEquals("注文書が正常に作成されました", response.getMessage());
 
         verify(poRepository, times(1)).save(any(PurchaseOrder.class));
     }
@@ -138,7 +138,7 @@ public class PurchaseOrderServiceImplTest {
         when(supplierRepository.findSupplierWithProductsAndCategory(999L)).thenReturn(Optional.empty());
 
         NotFoundException ex = assertThrows(NotFoundException.class, () -> poService.createPurchaseOrder(poDTO));
-        assertEquals("この仕入先は存在していません。", ex.getMessage());
+        assertEquals("この仕入先は存在していません", ex.getMessage());
     }
 
     @Test
@@ -153,7 +153,7 @@ public class PurchaseOrderServiceImplTest {
         ResponseDTO<PurchaseOrderDTO> response = poService.getPurchaseOrderById(1L);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("注文書が正常に取得されました。", response.getMessage());
+        assertEquals("注文書が正常に取得されました", response.getMessage());
     }
 
     @Test
@@ -171,7 +171,7 @@ public class PurchaseOrderServiceImplTest {
         ResponseDTO<PurchaseOrderDTO> response = poService.updatePurchaseOrder(1L, dto);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("購入注文が正常に更新されました。", response.getMessage());
+        assertEquals("購入注文が正常に更新されました", response.getMessage());
         assertEquals("Updated description", po.getDescription());
         verify(poRepository, times(1)).save(po);
     }
@@ -186,7 +186,7 @@ public class PurchaseOrderServiceImplTest {
         ResponseDTO<Void> response = poService.deletePurchaseOrder(1L);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("購入注文が正常に削除されました。", response.getMessage());
+        assertEquals("購入注文が正常に削除されました", response.getMessage());
         verify(poRepository, times(1)).delete(po);
     }
 }

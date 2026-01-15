@@ -52,6 +52,11 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouseService.getWarehouseByLocation(location));
     }
 
+    @GetMapping("/all-by-sku/with-location/{sku}")
+    public ResponseEntity<ResponseDTO<List<WarehouseDTO>>> getWarehouseBySkuWithStocks(@PathVariable String sku) {
+        return ResponseEntity.ok(warehouseService.getWarehouseBySkuWithStocks(sku));
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDTO<WarehouseDTO>> updateWarehouse(
             @PathVariable Long id,

@@ -94,7 +94,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                 });
         return ResponseDTO.<List<InventoryStockDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫一覧の取得に成功しました。")
+                .message("在庫一覧の取得に成功しました")
                 .data(inventoryStockDTOs)
                 .build();
     }
@@ -116,7 +116,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         inventoryStockDTO.setStockHistories(stockHistoryDTOs);
         return ResponseDTO.<InventoryStockDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫情報の取得に成功しました。")
+                .message("在庫情報の取得に成功しました")
                 .data(inventoryStockDTO)
                 .build();
     }
@@ -141,7 +141,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         return ResponseDTO.<List<InventoryStockDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫情報の取得に成功しました。")
+                .message("在庫情報の取得に成功しました")
                 .data(inventoryStockDTOs)
                 .build();
     }
@@ -159,9 +159,9 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     public ResponseDTO<InventoryStockDTO> increaseStock(StockChangeRequest request) {
 
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("商品が存在していません。"));
+                .orElseThrow(() -> new NotFoundException("商品が存在していません"));
         Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("倉庫が存在していません。"));
+                .orElseThrow(() -> new NotFoundException("倉庫が存在していません"));
 
         InventoryStock stock = inventoryStockRepository
                 .findByProductIdAndWarehouseId(
@@ -175,7 +175,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                     return inventoryStockRepository.save(newStock);
                 });
         if (request.getQty() <= 0) {
-            throw new InvalidCredentialException("数量が正しくありません。");
+            throw new InvalidCredentialException("数量が正しくありません");
         }
 
         StockHistoryDTO history = new StockHistoryDTO();
@@ -196,7 +196,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         }
         return ResponseDTO.<InventoryStockDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫の追加に成功しました。")
+                .message("在庫の追加に成功しました")
                 .data(stockDTO)
                 .build();
     }
@@ -213,21 +213,21 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     public ResponseDTO<InventoryStockDTO> decreaseStock(StockChangeRequest request) {
 
         if (!productRepository.existsById(request.getProductId())) {
-            throw new NotFoundException("商品が存在していません。");
+            throw new NotFoundException("商品が存在していません");
         }
         if (!warehouseRepository.existsById(request.getWarehouseId())) {
-            throw new NotFoundException("倉庫が存在していません。");
+            throw new NotFoundException("倉庫が存在していません");
         }
         InventoryStock stock = inventoryStockRepository
                 .findByProductIdAndWarehouseId(
                         request.getProductId(),
                         request.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("在庫が存在していません。"));
+                .orElseThrow(() -> new NotFoundException("在庫が存在していません"));
         if (request.getQty() <= 0) {
-            throw new InvalidCredentialException("減少数量が正しくありません。");
+            throw new InvalidCredentialException("減少数量が正しくありません");
         }
         if (stock.getQuantity() < request.getQty()) {
-            throw new InvalidCredentialException("在庫が不足しています。");
+            throw new InvalidCredentialException("在庫が不足しています");
         }
 
         StockHistoryDTO history = new StockHistoryDTO();
@@ -245,7 +245,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         return ResponseDTO.<InventoryStockDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫の減少に成功しました。")
+                .message("在庫の減少に成功しました")
                 .data(stockDTO)
                 .build();
     }
@@ -255,15 +255,15 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     public ResponseDTO<InventoryStockDTO> adjustStock(StockChangeRequest request) {
 
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("商品が存在していません。"));
+                .orElseThrow(() -> new NotFoundException("商品が存在していません"));
         Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("倉庫が存在していません。"));
+                .orElseThrow(() -> new NotFoundException("倉庫が存在していません"));
 
         InventoryStock stock = inventoryStockRepository
                 .findByProductIdAndWarehouseId(request.getProductId(), request.getWarehouseId())
                 .orElseGet(() -> {
                     if (request.getQty() < 0) {
-                        throw new InvalidCredentialException("在庫が存在しないため、減少はできません。");
+                        throw new InvalidCredentialException("在庫が存在しないため、減少はできません");
                     }
                     InventoryStock newStock = new InventoryStock();
                     newStock.setProduct(product);
@@ -274,7 +274,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         int newQty = stock.getQuantity() + request.getQty();
         if (newQty < 0) {
-            throw new InvalidCredentialException("在庫が不足しています。");
+            throw new InvalidCredentialException("在庫が不足しています");
         }
         stock.setQuantity(newQty);
         inventoryStockRepository.save(stock);
@@ -296,7 +296,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         }
         return ResponseDTO.<InventoryStockDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫の調整に成功しました。")
+                .message("在庫の調整に成功しました")
                 .data(stockDTO)
                 .build();
     }
@@ -317,11 +317,11 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         // PO を取得。存在しなければ例外
         PurchaseOrder po = purchaseOrderRepository.findById(poId)
-                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
 
         // PO が完了済みなら例外
         if (po.getStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalStateException("この注文書は既に完了しています。");
+            throw new IllegalStateException("この注文書は既に完了しています");
         }
 
         boolean anyReceived = false; // 今回受領したアイテムがあるか
@@ -349,7 +349,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
             }
 
             if (item.getReceivedQty() <= 0) {
-                throw new InvalidCredentialException("受領数量は0より大きくなければなりません。");
+                throw new InvalidCredentialException("受領数量は0より大きくなければなりません");
             }
 
             // 同じ明細IDの数量を加算
@@ -466,15 +466,15 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         purchaseOrderRepository.save(po);
 
         ReceiveStockResultDTO result = ReceiveStockResultDTO.builder()
-                .purchaseOrderId(po.getId())
-                .poStatus(po.getStatus())
+                .orderId(po.getId())
+                .status(po.getStatus())
                 .completedDetailIds(allCompletedDetailIds)
                 .stockHistories(createdStockHistories)
                 .build();
 
         return ResponseDTO.<ReceiveStockResultDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫の受領処理が完了しました。")
+                .message("在庫の受領処理が完了しました")
                 .data(result)
                 .build();
     }
@@ -499,7 +499,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         // 完了済みの注文書なら出庫不可
         if (so.getStatus() == OrderStatus.COMPLETED) {
-            throw new IllegalStateException("この注文書は既に完了しています。");
+            throw new IllegalStateException("この注文書は既に完了しています");
         }
 
         boolean anyDelivered = false; // 今回出庫したアイテムがあるか
@@ -524,7 +524,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
             // 出庫数量が0以下の場合は例外
             if (itemDTO.getDeliveredQty() <= 0) {
-                throw new InvalidCredentialException("出庫数量は0より大きくなければなりません。");
+                throw new InvalidCredentialException("出庫数量は0より大きくなければなりません");
             }
 
             // 明細を取得
@@ -603,7 +603,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         return ResponseDTO.<DeliverStockResultDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("出庫処理が完了しました。")
+                .message("出庫処理が完了しました")
                 .data(result)
                 .build();
     }

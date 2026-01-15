@@ -11,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
-import com.example.ReservationApp.entity.product.Product;
 import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
@@ -20,7 +19,6 @@ import com.example.ReservationApp.exception.InvalidCredentialException;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.SalesOrderDetailMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
-import com.example.ReservationApp.repository.product.ProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
@@ -72,24 +70,24 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                 if (soDetailDTO.getProductId() == null
                                 || soDetailDTO.getQty() == null
                                 || soDetailDTO.getPrice() == null) {
-                        throw new InvalidCredentialException("商品ID、商品の数量、単価は必須です。");
+                        throw new InvalidCredentialException("商品ID、商品の数量、単価は必須です");
                 }
 
                 // 数量は正の値でなければならない
                 if (soDetailDTO.getQty() <= 0) {
-                        throw new InvalidCredentialException("数量は0より大きくなければなりません。");
+                        throw new InvalidCredentialException("数量は0より大きくなければなりません");
                 }
 
                 SalesOrder so = soRepository.findById(salesOrderId)
-                                .orElseThrow(() -> new NotFoundException("この注文書が存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書が存在していません"));
 
                 // NEWステータスのみ編集可能
                 if (so.getStatus() != OrderStatus.NEW) {
-                        throw new IllegalStateException("この注文書は編集できません。");
+                        throw new IllegalStateException("この注文書は編集できません");
                 }
 
                 // Product product = productRepository.findById(soDetailDTO.getProductId())
-                //                 .orElseThrow(() -> new NotFoundException("この商品は存在していません。"));
+                //                 .orElseThrow(() -> new NotFoundException("この商品は存在していません"));
 
                 SupplierProduct supplierProduct = supplierProductRepository.findBySupplierSku(soDetailDTO.getSku())
                                 .orElseThrow(() -> new NotFoundException("SKUが存在しません: " + soDetailDTO.getSku()));
@@ -111,7 +109,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
 
                         // 単価不一致チェック
                         if (soDetail.getPrice().compareTo(soDetailDTO.getPrice()) != 0) {
-                                throw new IllegalStateException("同一商品の単価が一致していません。");
+                                throw new IllegalStateException("同一商品の単価が一致していません");
                         }
 
                         // 数量加算
@@ -149,7 +147,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                 updateTotal(so);
                 return ResponseDTO.<SalesOrderDetailDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("販売の詳細が正常に追加されました。")
+                                .message("販売の詳細が正常に追加されました")
                                 .data(soDetailMapper.toDTO(soDetail))
                                 .build();
         }
@@ -167,7 +165,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
 
                 log.info("Updating PurchaseOrderDetail ID = {}", detailId);
                 SalesOrderDetail updatedSoDetail = soDetailRepository.findById(detailId)
-                                .orElseThrow(() -> new NotFoundException("この販売の詳細は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この販売の詳細は存在していません"));
 
                 if (soDetailDTO.getPrice() != null) {
                         updatedSoDetail.setPrice(soDetailDTO.getPrice());
@@ -180,7 +178,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
 
                 return ResponseDTO.<SalesOrderDetailDTO>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("販売の詳細が正常に更新されました。")
+                                .message("販売の詳細が正常に更新されました")
                                 .data(soDetailMapper.toDTO(updatedSoDetail))
                                 .build();
         }
@@ -188,7 +186,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         @Override
         public ResponseDTO<Void> deleteDetail(Long detailId) {
                 SalesOrderDetail soDetail = soDetailRepository.findById(detailId)
-                                .orElseThrow(() -> new NotFoundException("この販売の詳細は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この販売の詳細は存在していません"));
                 SalesOrder po = soDetail.getSalesOrder();
                 po.getDetails().remove(soDetail);
 
@@ -196,7 +194,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                 updateTotal(po);
                 return ResponseDTO.<Void>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("販売の詳細が正常に削除されました。")
+                                .message("販売の詳細が正常に削除されました")
                                 .build();
         }
 
@@ -204,12 +202,12 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         public ResponseDTO<List<SalesOrderDetailDTO>> getBySalesOrderId(Long salesOrderId) {
 
                 SalesOrder so = soRepository.findById(salesOrderId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
                 List<SalesOrderDetail> soDetails = soDetailRepository.findBySalesOrder(so);
 
                 return ResponseDTO.<List<SalesOrderDetailDTO>>builder()
                                 .status(HttpStatus.OK.value())
-                                .message("詳細情報の取得に成功しました。")
+                                .message("詳細情報の取得に成功しました")
                                 .data(soDetailMapper.toDTOList(soDetails))
                                 .build();
         }
@@ -218,7 +216,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         public List<SalesOrderDetailDTO> getDetailEntitysByOrder(Long salesOrderId) {
 
                 SalesOrder so = soRepository.findById(salesOrderId)
-                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません。"));
+                                .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
                 List<SalesOrderDetail> soDetails = soDetailRepository.findBySalesOrder(so);
                 return soDetailMapper.toDTOList(soDetails);
         }

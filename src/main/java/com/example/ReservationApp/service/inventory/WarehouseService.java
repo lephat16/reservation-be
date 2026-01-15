@@ -21,5 +21,7 @@ public interface WarehouseService {
 
     ResponseDTO<Void> deleteWarehouse(Long warehouseId);
 
+    ResponseDTO<List<WarehouseDTO>> getWarehouseBySkuWithStocks(String sku);
+
     
 }

@@ -38,13 +38,13 @@ public class User {
     private Long id;
     @Column(name = "user_id", unique = true)
     private String userId;
-    @NotBlank(message = "名前は必須です。")
+    @NotBlank(message = "名前は必須です")
     private String name;
-    @NotBlank(message = "メールアドレスは必須です。")
+    @NotBlank(message = "メールアドレスは必須です")
     private String email;
-    @NotBlank(message = "パスワードは必須です。")
+    @NotBlank(message = "パスワードは必須です")
     private String password;
-    @NotBlank(message = "電話番号は必須です。")
+    @NotBlank(message = "電話番号は必須です")
     @Column(name = "phone_number")
     private String phoneNumber;
     @Enumerated(EnumType.STRING)

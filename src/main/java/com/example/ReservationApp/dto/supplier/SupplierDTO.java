@@ -28,13 +28,13 @@ import lombok.NoArgsConstructor;
 public class SupplierDTO {
 
     private Long id;
-    @NotBlank(message = "名前は必須です。")
+    @NotBlank(message = "名前は必須です")
     private String name;
-    @NotBlank(message = "連絡先情報は必須です。")
+    @NotBlank(message = "連絡先情報は必須です")
     private String contactInfo;
-    @NotBlank(message = "住所は必須です。")
+    @NotBlank(message = "住所は必須です")
     private String address;
-    @NotNull(message = "ステータスは必須です。")
+    @NotNull(message = "ステータスは必須です")
     private SupplierStatus supplierStatus;
     private List<String> categoryNames;
 }

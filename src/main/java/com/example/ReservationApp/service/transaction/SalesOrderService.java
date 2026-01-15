@@ -15,5 +15,9 @@ public interface SalesOrderService {
 
     ResponseDTO<SalesOrderDTO> updateSalesOrder(Long id, SalesOrderDTO salesOrderDTO);
 
+    ResponseDTO<SalesOrderDTO> updateSalesOrderQuantityAndDescription(Long id, SalesOrderDTO salesOrderDTO);
+
     ResponseDTO<Void> deleteSalesOrder(Long salesOrderId);
+
+    ResponseDTO<SalesOrderDTO> prepareOrder(Long saleOrderId);
 }

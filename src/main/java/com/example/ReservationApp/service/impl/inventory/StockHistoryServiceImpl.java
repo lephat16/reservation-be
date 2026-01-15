@@ -11,8 +11,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.ReservationApp.dto.ResponseDTO;
-import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByOrderDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryHistoryBySaleOrderFlatDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
@@ -22,6 +23,8 @@ import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.inventory.WarehouseRepository;
 import com.example.ReservationApp.repository.product.ProductRepository;
+import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
+import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
 import com.example.ReservationApp.service.inventory.StockHistoryService;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,8 @@ public class StockHistoryServiceImpl implements StockHistoryService {
     private final StockHistoryMapper stockHistoryMapper;
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
+    private final SalesOrderRepository salesOrderRepository;
+    private final PurchaseOrderRepository purchaseOrderRepository;
 
     /**
      * 在庫履歴を作成します。数量の増減を反映します。
@@ -51,16 +56,16 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         // 変更数量が null または 0 の場合は例外
         if (stockHistoryDTO.getChangeQty() == null || stockHistoryDTO.getChangeQty() == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "数量の変更は0にできません。");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "数量の変更は0にできません");
         }
 
         // 対象の在庫データを取得。存在しなければ例外
         InventoryStock inventoryStock = inventoryStockRepository.findById(inventoryStockId)
-                .orElseThrow(() -> new NotFoundException("在庫データが存在していません。"));
+                .orElseThrow(() -> new NotFoundException("在庫データが存在していません"));
 
         int newQty = inventoryStock.getQuantity() + stockHistoryDTO.getChangeQty();
         if (newQty < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "在庫が不足しています。");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "在庫が不足しています");
         }
 
         // StockHistory エンティティに変換し、在庫と紐付けて保存
@@ -74,7 +79,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         return ResponseDTO.<StockHistoryDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("新しい商品の追加に成功しました。")
+                .message("新しい商品の追加に成功しました")
                 .data(stockHistoryMapper.toDTO(stockHistory))
                 .build();
     }
@@ -94,7 +99,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
         // DTOに変換して返す
         return ResponseDTO.<List<StockHistoryDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫履歴の取得に成功しました。")
+                .message("在庫履歴の取得に成功しました")
                 .data(stockHistoryDTOs)
                 .build();
     }
@@ -114,7 +119,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
         // DTOに変換して返す
         return ResponseDTO.<List<StockHistoryDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("指定在庫の履歴取得に成功しました。")
+                .message("指定在庫の履歴取得に成功しました")
                 .data(stockHistoryMapper.toDTOList(stockHistories))
                 .build();
 
@@ -131,7 +136,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         // 倉庫存在チェック
         if (!warehouseRepository.existsById(warehouseId)) {
-            throw new NotFoundException("この倉庫は存在していません。");
+            throw new NotFoundException("この倉庫は存在していません");
         }
 
         // 指定倉庫に紐づく履歴を取得
@@ -139,7 +144,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         return ResponseDTO.<List<StockHistoryDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("指定倉庫の履歴取得に成功しました。")
+                .message("指定倉庫の履歴取得に成功しました")
                 .data(stockHistoryMapper.toDTOList(stockHistories))
                 .build();
     }
@@ -155,7 +160,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         // 商品存在チェック
         if (!productRepository.existsById(productId)) {
-            throw new NotFoundException("この商品は存在していません。");
+            throw new NotFoundException("この商品は存在していません");
         }
 
         // 指定商品に紐づく履歴を取得
@@ -163,7 +168,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         return ResponseDTO.<List<StockHistoryDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("指定商品の履歴取得に成功しました。")
+                .message("指定商品の履歴取得に成功しました")
                 .data(stockHistoryMapper.toDTOList(stockHistories))
                 .build();
     }
@@ -187,20 +192,20 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         return ResponseDTO.<List<StockHistoryDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("最近の在庫履歴取得に成功しました。")
+                .message("最近の在庫履歴取得に成功しました")
                 .data(stockHistoryMapper.toDTOList(stockHistories))
                 .build();
     }
 
     @Override
-    public ResponseDTO<List<InventoryHistoryByPurchaseOrderDTO>> getInventoryHistoryByPurchaseOrder(Long poId) {
+    public ResponseDTO<List<InventoryHistoryByOrderDTO>> getInventoryHistoryByPurchaseOrder(Long poId) {
 
         List<InventoryHistoryByPurchaseOrderFlatDTO> inventoryHistoryByPurchaseOrderFlatDTOs = stockHistoryRepository
                 .findInventoryHistoryByPurchaseOrder(poId);
 
-        List<InventoryHistoryByPurchaseOrderDTO> inventoryHistoryByPurchaseOrderDTOs = inventoryHistoryByPurchaseOrderFlatDTOs
+        List<InventoryHistoryByOrderDTO> InventoryHistoryByOrderDTOs = inventoryHistoryByPurchaseOrderFlatDTOs
                 .stream()
-                .map(flatDTO -> InventoryHistoryByPurchaseOrderDTO.builder()
+                .map(flatDTO -> InventoryHistoryByOrderDTO.builder()
                         .id(flatDTO.getId())
                         .location(flatDTO.getLocation())
                         .warehouseName(flatDTO.getWarehouseName())
@@ -213,10 +218,42 @@ public class StockHistoryServiceImpl implements StockHistoryService {
                         .supplierSku(flatDTO.getSupplierSku())
                         .build())
                 .collect(Collectors.toList());
-        return ResponseDTO.<List<InventoryHistoryByPurchaseOrderDTO>>builder()
+        return ResponseDTO.<List<InventoryHistoryByOrderDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫履歴取得に成功しました。")
-                .data(inventoryHistoryByPurchaseOrderDTOs)
+                .message("在庫履歴取得に成功しました")
+                .data(InventoryHistoryByOrderDTOs)
                 .build();
     }
+    
+    @Override
+    public ResponseDTO<List<InventoryHistoryByOrderDTO>> getInventoryHistoryBySaleOrder(Long soId) {
+        if (!salesOrderRepository.existsById(soId)) {
+            throw new NotFoundException("この販売注文書は存在していません");
+        }
+        List<InventoryHistoryBySaleOrderFlatDTO> inventoryHistoryBySaleOrderFlatDTOs = stockHistoryRepository
+                .findInventoryHistoryBySaleOrder(soId);
+
+        List<InventoryHistoryByOrderDTO> InventoryHistoryByOrderDTOs = inventoryHistoryBySaleOrderFlatDTOs
+                .stream()
+                .map(flatDTO -> InventoryHistoryByOrderDTO.builder()
+                        .id(flatDTO.getId())
+                        .location(flatDTO.getLocation())
+                        .warehouseName(flatDTO.getWarehouseName())
+                        .changeQty(flatDTO.getChangeQty())
+                        .notes(flatDTO.getNotes())
+                        .productName(flatDTO.getProductName())
+                        .customerName(flatDTO.getCustomerName())
+                        .refType(flatDTO.getRefType())
+                        .createdAt(flatDTO.getCreatedAt())
+                        .supplierSku(flatDTO.getSupplierSku())
+                        .inventoryStockId(flatDTO.getInventoryStockId())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseDTO.<List<InventoryHistoryByOrderDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("在庫履歴取得に成功しました")
+                .data(InventoryHistoryByOrderDTOs)
+                .build();
+    }
+
 }

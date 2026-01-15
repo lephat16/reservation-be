@@ -44,7 +44,7 @@ public class WarehouseServiceImpl implements WarehouseService {
         // 保存結果をDTOで返却
         return ResponseDTO.<WarehouseDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫の新規登録に成功しました。")
+                .message("倉庫の新規登録に成功しました")
                 .data(warehouseMapper.toDTO(warehouse))
                 .build();
     }
@@ -57,7 +57,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Override
     public ResponseDTO<List<WarehouseDTO>> getAllWarehouse() {
         // 全件取得
-        List<Warehouse> warehouses = warehouseRepository.findBAllWithStocks();
+        List<Warehouse> warehouses = warehouseRepository.findAllWithStocks();
 
         // エンティティをDTOに変換
         List<WarehouseDTO> warehouseDTOs = warehouses.stream()
@@ -70,7 +70,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         return ResponseDTO.<List<WarehouseDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫一覧の取得に成功しました。")
+                .message("倉庫一覧の取得に成功しました")
                 .data(warehouseDTOs)
                 .build();
     }
@@ -81,7 +81,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         return ResponseDTO.<List<WarehouseDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫一覧の取得に成功しました。")
+                .message("倉庫一覧の取得に成功しました")
                 .data(warehouseDTOs)
                 .build();
     }
@@ -104,8 +104,33 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         return ResponseDTO.<WarehouseDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫情報の取得に成功しました。")
+                .message("倉庫情報の取得に成功しました")
                 .data(warehouseDTO)
+                .build();
+    }
+
+    @Override
+    public ResponseDTO<List<WarehouseDTO>> getWarehouseBySkuWithStocks(String sku) {
+        // 全件取得
+        List<Warehouse> warehouses = warehouseRepository.findAllBySkuWithStocks(sku);
+
+        // エンティティをDTOに変換
+        List<WarehouseDTO> warehouseDTOs = warehouses.stream()
+                .map(wh -> {
+                    // WarehouseDTO warehouseDTO = warehouseMapper.toDTO(wh);
+                    // warehouseDTO.setStocks(inventoryStockMapper.toDTOList(wh.getInventoryStocks()));
+                    WarehouseDTO warehouseDTO = new WarehouseDTO(
+                            wh.getId(),
+                            wh.getName(),
+                            wh.getLocation());
+                    return warehouseDTO;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseDTO.<List<WarehouseDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("倉庫一覧の取得に成功しました")
+                .data(warehouseDTOs)
                 .build();
     }
 
@@ -127,7 +152,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         return ResponseDTO.<List<WarehouseDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫情報の取得に成功しました。")
+                .message("倉庫情報の取得に成功しました")
                 .data(warehouseMapper.toDTOList(warehouses))
                 .build();
     }
@@ -161,7 +186,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         return ResponseDTO.<WarehouseDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫情報の更新に成功しました。")
+                .message("倉庫情報の更新に成功しました")
                 .data(warehouseMapper.toDTO(updatedWarehouse))
                 .build();
     }
@@ -183,7 +208,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
-                .message("倉庫の削除に成功しました。")
+                .message("倉庫の削除に成功しました")
                 .build();
     }
 

@@ -151,12 +151,12 @@ public class JwtUtils {
                     .parseSignedClaims(refreshToken)
                     .getPayload();
         } catch (Exception e) {
-            throw new RuntimeException("不正なリフレッシュトークンです。署名の検証に失敗しました。");
+            throw new RuntimeException("不正なリフレッシュトークンです。署名の検証に失敗しました");
         }
 
         Date expiration = claims.getExpiration();
         if (expiration.before(new Date())) {    
-            throw new RuntimeException("リフレッシュトークンの有効期限が切れています。");
+            throw new RuntimeException("リフレッシュトークンの有効期限が切れています");
         }
 
         String storedRefreshToken = redisTemplate.opsForValue().get("refresh_token:" + email);

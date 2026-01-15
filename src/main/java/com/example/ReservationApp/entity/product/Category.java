@@ -36,7 +36,7 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @NotBlank(message = "名前は必須です。")
+    @NotBlank(message = "名前は必須です")
     private String name;
 
     @Enumerated(EnumType.STRING)

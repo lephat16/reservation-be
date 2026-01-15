@@ -89,7 +89,7 @@ public class SalesOrderDetailServiceImplTest {
         ResponseDTO<SalesOrderDetailDTO> response = soDetailService.addDetail(1L, dto);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("販売の詳細が正常に追加されました。", response.getMessage());
+        assertEquals("販売の詳細が正常に追加されました", response.getMessage());
         verify(soDetailRepository, times(1)).save(any(SalesOrderDetail.class));
     }
 
@@ -106,7 +106,7 @@ public class SalesOrderDetailServiceImplTest {
 
         NotFoundException ex = assertThrows(NotFoundException.class,
                 () -> soDetailService.addDetail(1L, dto));
-        assertEquals("この商品は存在していません。", ex.getMessage());
+        assertEquals("この商品は存在していません", ex.getMessage());
     }
 
     @Test
@@ -125,6 +125,6 @@ public class SalesOrderDetailServiceImplTest {
 
         InvalidCredentialException ex = assertThrows(InvalidCredentialException.class,
                 () -> soDetailService.addDetail(1L, dto));
-        assertTrue(ex.getMessage().contains("在庫が不足しています。"));
+        assertTrue(ex.getMessage().contains("在庫が不足しています"));
     }
 }

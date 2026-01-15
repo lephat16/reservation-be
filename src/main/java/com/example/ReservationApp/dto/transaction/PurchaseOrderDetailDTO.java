@@ -25,11 +25,11 @@ public class PurchaseOrderDetailDTO {
     private Long purchaseOrderId;
     private Long productId;
     private String productName;
-    @NotNull(message = "数量は必須です。")
-    @Positive(message = "数量は0より大きくなければなりません。")
+    @NotNull(message = "数量は必須です")
+    @Positive(message = "数量は0より大きくなければなりません")
     private Integer qty;
-    @NotNull(message = "価格は必須です。")
-    @DecimalMin(value = "0.0", inclusive = false, message = "価格は0より大きくなければなりません。")
+    @NotNull(message = "価格は必須です")
+    @DecimalMin(value = "0.0", inclusive = false, message = "価格は0より大きくなければなりません")
     private BigDecimal cost; // snapshot price
     private OrderStatus status;
     private String sku;

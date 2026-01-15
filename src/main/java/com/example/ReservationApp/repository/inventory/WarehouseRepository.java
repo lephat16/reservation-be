@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.example.ReservationApp.dto.response.inventory.WarehouseDTO;
 import com.example.ReservationApp.entity.inventory.Warehouse;
@@ -27,7 +28,17 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
             LEFT JOIN FETCH w.inventoryStocks s
             LEFT JOIN FETCH s.product
             """)
-    List<Warehouse> findBAllWithStocks();
+    List<Warehouse> findAllWithStocks();
+
+    @Query("""
+            SELECT w
+            FROM Warehouse w
+            LEFT JOIN FETCH w.inventoryStocks s
+            LEFT JOIN FETCH s.product p
+            JOIN FETCH s.supplierProduct sp
+            WHERE sp.supplierSku = :sku
+            """)
+    List<Warehouse> findAllBySkuWithStocks(@Param("sku") String sku);
 
     @Query("""
                 SELECT new com.example.ReservationApp.dto.response.inventory.WarehouseDTO(w.id, w.name, w.location)

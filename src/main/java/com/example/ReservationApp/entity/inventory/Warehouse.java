@@ -8,6 +8,8 @@ import com.example.ReservationApp.enums.WarehouseStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -33,6 +35,7 @@ public class Warehouse {
 
     private String name;
     private String location;
+    @Enumerated(EnumType.STRING)
     private WarehouseStatus status;
 
     private LocalDateTime createdAt;

@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LoginRequestDTO {
-    @NotBlank(message = "メールアドレスは必須です。")
+    @NotBlank(message = "メールアドレスは必須です")
     private String email;
-    @NotBlank(message = "パスワードは必須です。")
+    @NotBlank(message = "パスワードは必須です")
     private String password;
 
 }

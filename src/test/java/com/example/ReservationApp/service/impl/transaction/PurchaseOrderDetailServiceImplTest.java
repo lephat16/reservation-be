@@ -70,7 +70,7 @@ class PurchaseOrderDetailServiceImplTest {
         ResponseDTO<PurchaseOrderDetailDTO> response = poDetailService.addDetail(1L, dto);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("購入明細が正常に追加されました。", response.getMessage());
+        assertEquals("購入明細が正常に追加されました", response.getMessage());
         assertEquals(5, response.getData().getQty());
         verify(poDetailRepository, times(1)).save(any(PurchaseOrderDetail.class));
     }
@@ -86,7 +86,7 @@ class PurchaseOrderDetailServiceImplTest {
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
 
         NotFoundException ex = assertThrows(NotFoundException.class, () -> poDetailService.addDetail(1L, dto));
-        assertEquals("この商品は存在していません。", ex.getMessage());
+        assertEquals("この商品は存在していません", ex.getMessage());
     }
 
     @Test
@@ -100,7 +100,7 @@ class PurchaseOrderDetailServiceImplTest {
 
         InvalidCredentialException ex = assertThrows(InvalidCredentialException.class,
                 () -> poDetailService.addDetail(1L, dto));
-        assertEquals("数量は0より大きくなければなりません。", ex.getMessage());
+        assertEquals("数量は0より大きくなければなりません", ex.getMessage());
     }
 
     @Test
@@ -115,7 +115,7 @@ class PurchaseOrderDetailServiceImplTest {
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> poDetailService.addDetail(1L, dto));
-        assertEquals("この注文書は編集できません。", ex.getMessage());
+        assertEquals("この注文書は編集できません", ex.getMessage());
     }
 
     @Test
@@ -136,7 +136,7 @@ class PurchaseOrderDetailServiceImplTest {
         ResponseDTO<PurchaseOrderDetailDTO> response = poDetailService.updateDetail(1L, dto);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("購入の詳細が正常に更新されました。", response.getMessage());
+        assertEquals("購入の詳細が正常に更新されました", response.getMessage());
         assertEquals(10, response.getData().getQty());
         assertEquals(BigDecimal.valueOf(120), response.getData().getCost());
         verify(poDetailRepository, times(1)).save(existingDetail);
@@ -152,7 +152,7 @@ class PurchaseOrderDetailServiceImplTest {
 
         NotFoundException ex = assertThrows(NotFoundException.class,
                 () -> poDetailService.updateDetail(1L, dto));
-        assertEquals("この購入の詳細は存在していません。", ex.getMessage());
+        assertEquals("この購入の詳細は存在していません", ex.getMessage());
     }
 
     @Test
@@ -167,7 +167,7 @@ class PurchaseOrderDetailServiceImplTest {
         ResponseDTO<Void> response = poDetailService.deleteDetail(1L);
 
         assertEquals(HttpStatus.OK.value(), response.getStatus());
-        assertEquals("購入の詳細が正常に削除されました。", response.getMessage());
+        assertEquals("購入の詳細が正常に削除されました", response.getMessage());
         assertFalse(po.getDetails().contains(poDetail));
         verify(poDetailRepository, times(1)).delete(poDetail);
     }
@@ -178,7 +178,7 @@ class PurchaseOrderDetailServiceImplTest {
 
         NotFoundException ex = assertThrows(NotFoundException.class,
                 () -> poDetailService.deleteDetail(1L));
-        assertEquals("この購入の詳細は存在していません。", ex.getMessage());
+        assertEquals("この購入の詳細は存在していません", ex.getMessage());
     }
 
 }

@@ -19,10 +19,12 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
+import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoFlatDTO;
+import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
 import com.example.ReservationApp.dto.response.product.SupplierPriceDTO;
 import com.example.ReservationApp.entity.product.Category;
@@ -77,7 +79,7 @@ public class ProductServiceImpl implements ProductService {
         Product createdProduct = productMapper.toEntity(productDTO);
         if (productDTO.getCategoryName() != null && !productDTO.getCategoryName().isBlank()) {
             Category existingCategory = categoryRepository.findByName(productDTO.getCategoryName())
-                    .orElseThrow(() -> new NotFoundException("この製品はどのカテゴリにも属していません。"));
+                    .orElseThrow(() -> new NotFoundException("この製品はどのカテゴリにも属していません"));
             createdProduct.setCategory(existingCategory);
         }
         if (productRepository.existsByProductCode(productDTO.getProductCode())) {
@@ -90,7 +92,7 @@ public class ProductServiceImpl implements ProductService {
 
         return ResponseDTO.<ProductDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("新しい商品の追加に成功しました。")
+                .message("新しい商品の追加に成功しました")
                 .data(productMapper.toDTO(savedProduct))
                 .build();
     }
@@ -108,7 +110,7 @@ public class ProductServiceImpl implements ProductService {
 
         return ResponseDTO.<List<ProductDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("全て商品の取得に成功しました。")
+                .message("全て商品の取得に成功しました")
                 .data(productDTOs)
                 .build();
     }
@@ -124,11 +126,11 @@ public class ProductServiceImpl implements ProductService {
     public ResponseDTO<ProductDTO> getProductById(Long id) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(("この商品は見つかりません。")));
+                .orElseThrow(() -> new NotFoundException(("この商品は見つかりません")));
 
         return ResponseDTO.<ProductDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(id + "-商品の取得に成功しました。")
+                .message(id + "-商品の取得に成功しました")
                 .data(productMapper.toDTO(product))
                 .build();
     }
@@ -151,12 +153,12 @@ public class ProductServiceImpl implements ProductService {
     public ResponseDTO<ProductDTO> updateProduct(Long id, ProductDTO productDTO) {
 
         Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(("この商品は存在していません。")));
+                .orElseThrow(() -> new NotFoundException(("この商品は存在していません")));
 
         if (productDTO.getCategoryName() != null && !productDTO.getCategoryName().isBlank()) {
             existingProduct.setCategory(
                     categoryRepository.findByName(productDTO.getCategoryName())
-                            .orElseThrow(() -> new NotFoundException(productDTO.getCategoryName() + "カテゴリは見つかりません。")));
+                            .orElseThrow(() -> new NotFoundException(productDTO.getCategoryName() + "カテゴリは見つかりません")));
         }
 
         // 商品名更新
@@ -188,7 +190,7 @@ public class ProductServiceImpl implements ProductService {
         Product updatedProduct = productRepository.save(existingProduct);
         return ResponseDTO.<ProductDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("更新に成功しました。")
+                .message("更新に成功しました")
                 .data(productMapper.toDTO(updatedProduct))
                 .build();
     }
@@ -204,7 +206,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ResponseDTO<Void> deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
-            throw new NotFoundException("この商品は存在していません。");
+            throw new NotFoundException("この商品は存在していません");
         }
         try {
             productRepository.deleteById(id);
@@ -218,11 +220,11 @@ public class ProductServiceImpl implements ProductService {
             // 外部キー制約（supplier_products など）が存在する場合に発生
             // DBレベルの制約違反を業務例外に変換する
             throw new CannotDeleteException(
-                    "仕入先情報が存在するため、商品を削除できません。");
+                    "仕入先情報が存在するため、商品を削除できません");
         }
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
-                .message("削除に成功しました。")
+                .message("削除に成功しました")
                 .build();
     }
 
@@ -237,13 +239,13 @@ public class ProductServiceImpl implements ProductService {
     public ResponseDTO<List<ProductDTO>> getProductsByCategory(Long categoryId) {
         boolean existingCategory = categoryRepository.existsById(categoryId);
         if (!existingCategory) {
-            throw new NotFoundException("このカテゴリは存在していません。");
+            throw new NotFoundException("このカテゴリは存在していません");
         }
         List<Product> products = productRepository.findByCategoryId(categoryId);
         List<ProductDTO> productDTOs = productMapper.toDTOList(products);
         return ResponseDTO.<List<ProductDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("取得に成功しました。")
+                .message("取得に成功しました")
                 .data(productDTOs)
                 .build();
     }
@@ -259,20 +261,20 @@ public class ProductServiceImpl implements ProductService {
     public ResponseDTO<List<ProductDTO>> searchProducts(String keyword) {
         if (keyword == null || keyword.isBlank()) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "検索キーワードを入力してください。");
+                    HttpStatus.BAD_REQUEST, "検索キーワードを入力してください");
         }
         List<Product> products = productRepository.searchProducts(keyword);
         List<ProductDTO> productDTOs = productMapper.toDTOList(products);
         if (productDTOs.isEmpty()) {
             return ResponseDTO.<List<ProductDTO>>builder()
                     .status(HttpStatus.OK.value())
-                    .message("該当する商品がありません。")
+                    .message("該当する商品がありません")
                     .data(productDTOs)
                     .build();
         }
         return ResponseDTO.<List<ProductDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("取得に成功しました。")
+                .message("取得に成功しました")
                 .data(productDTOs)
                 .build();
     }
@@ -286,7 +288,7 @@ public class ProductServiceImpl implements ProductService {
         ProductInfoDTO result = productMap.values().iterator().next();
         return ResponseDTO.<ProductInfoDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("取得に成功しました。")
+                .message("取得に成功しました")
                 .data(result)
                 .build();
     }
@@ -302,7 +304,7 @@ public class ProductServiceImpl implements ProductService {
         // Mapに格納された商品DTOをListに変換してレスポンスとして返却
         return ResponseDTO.<List<ProductInfoDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("取得に成功しました。")
+                .message("取得に成功しました")
                 .data(new ArrayList<>(productMap.values()))
                 .build();
     }
@@ -362,7 +364,7 @@ public class ProductServiceImpl implements ProductService {
 
         List<Object[]> products = productRepository.findProductWithCatName(productId);
         if (products.isEmpty()) {
-            throw new NotFoundException("この商品は存在していません。");
+            throw new NotFoundException("この商品は存在していません");
         }
         Object[] product = products.get(0);
         ProductDTO productDTO = ProductDTO.builder()
@@ -421,7 +423,7 @@ public class ProductServiceImpl implements ProductService {
                 .build();
         return ResponseDTO.<ProductInfoDetailDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("取得に成功しました。")
+                .message("取得に成功しました")
                 .data(productInfoDetailDTO)
                 .build();
     }
@@ -429,7 +431,7 @@ public class ProductServiceImpl implements ProductService {
     public ResponseDTO<List<SumReceivedGroupByProductDTO>> getSumReceivedQtyByPoGroupByProduct(Long poId) {
 
         if (!poRepository.existsById(poId)) {
-            throw new NotFoundException("この注文書はは存在していません。");
+            throw new NotFoundException("この注文書はは存在していません");
         }
         List<Object[]> rows = stockHistoryRepository.sumReceivedQtyByPoGroupByProduct(poId);
         List<SumReceivedGroupByProductDTO> result = new ArrayList<>();
@@ -448,8 +450,24 @@ public class ProductServiceImpl implements ProductService {
         }
         return ResponseDTO.<List<SumReceivedGroupByProductDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("受領数量の集計が正常に取得されました。")
+                .message("受領数量の集計が正常に取得されました")
                 .data(result)
                 .build();
     }
+
+    @Override
+    public ResponseDTO<List<ProductWithSkuByCategoryDTO>> getAllSupllierProductWithSkuByCategory(Long categoryId) {
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new NotFoundException(("このカテゴリは存在していません。ID:" + categoryId));
+        }
+
+        List<ProductWithSkuByCategoryDTO> summaryDTOs = productRepository.findAllSupllierProductWithSkuByCategory(categoryId);
+
+        return ResponseDTO.<List<ProductWithSkuByCategoryDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("取得に成功しました")
+                .data(summaryDTOs)
+                .build();
+    }
+
 }

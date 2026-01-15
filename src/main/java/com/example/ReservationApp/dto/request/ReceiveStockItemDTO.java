@@ -17,12 +17,12 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ReceiveStockItemDTO {
-    @NotNull(message = "数量は必須です。")
+    @NotNull(message = "数量は必須です")
     private Long detailId;
-    @NotNull(message = "数量は必須です。")
+    @NotNull(message = "数量は必須です")
     private Long warehouseId;
-    @NotNull(message = "数量は必須です。")
-    @Positive(message = "数量は0より大きくなければなりません。")
+    @NotNull(message = "数量は必須です")
+    @Positive(message = "数量は0より大きくなければなりません")
     private Integer receivedQty;
     
     private String note;

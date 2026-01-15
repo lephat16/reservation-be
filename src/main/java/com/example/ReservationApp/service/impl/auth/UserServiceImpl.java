@@ -66,10 +66,10 @@ public class UserServiceImpl implements UserService {
     public ResponseDTO<LoginResponseDTO> loginUser(LoginRequestDTO loginRequestDTO) {
 
         User user = userRepository.findByEmail(loginRequestDTO.getEmail())
-                .orElseThrow(() -> new NotFoundException("メールアドレスが見つかりません。"));
+                .orElseThrow(() -> new NotFoundException("メールアドレスが見つかりません"));
 
         if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
-            throw new InvalidCredentialException("パスワードは間違っています。");
+            throw new InvalidCredentialException("パスワードは間違っています");
         }
 
         String token = jwtUtils.generateToken(loginRequestDTO.getEmail());
@@ -85,7 +85,7 @@ public class UserServiceImpl implements UserService {
                 .build();
         return ResponseDTO.<LoginResponseDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("ユーザーのロギングに成功しました。")
+                .message("ユーザーのロギングに成功しました")
                 .data(loginResponseDTO)
                 .build();
     }
@@ -111,7 +111,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (userRepository.existsByEmail(registerRequestDTO.getEmail())) {
-            throw new AlreadyExistException("メールアドレスはすでに存在しています。");
+            throw new AlreadyExistException("メールアドレスはすでに存在しています");
         }
         try {
             User userToSave = User.builder()
@@ -134,12 +134,12 @@ public class UserServiceImpl implements UserService {
             UserDTO userDTO = userMapper.toDTO(userToSave);
             return ResponseDTO.<UserDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message("ユーザーの登録に成功しました。")
+                    .message("ユーザーの登録に成功しました")
                     .data(userDTO)
                     .build();
         } catch (Exception ex) {
             ex.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "内部サーバーエラーが発生しました。");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "内部サーバーエラーが発生しました");
         }
 
     }
@@ -157,7 +157,7 @@ public class UserServiceImpl implements UserService {
 
         return ResponseDTO.<List<UserDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("全てのユーザー取得に成功しました。")
+                .message("全てのユーザー取得に成功しました")
                 .data(userDTOs)
                 .build();
 
@@ -171,11 +171,11 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public ResponseDTO<UserDTO> getUserById(Long id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(id + "のユーザーを見つかりません。"));
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException(id + "のユーザーを見つかりません"));
         UserDTO userDTO = userMapper.toDTO(user);
         return ResponseDTO.<UserDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message(id + "のユーザー取得に成功しました。")
+                .message(id + "のユーザー取得に成功しました")
                 .data(userDTO)
                 .build();
     }
@@ -191,7 +191,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseDTO<UserDTO> updateUser(Long id, UserDTO userDTO) {
 
-        User existingUser = userRepository.findById(id).orElseThrow(() -> new NotFoundException(id + "ユーザーを見つかりません。"));
+        User existingUser = userRepository.findById(id).orElseThrow(() -> new NotFoundException(id + "ユーザーを見つかりません"));
 
         if (userDTO.getName() != null && !userDTO.getName().isBlank()) {
             existingUser.setName(userDTO.getName());
@@ -215,7 +215,7 @@ public class UserServiceImpl implements UserService {
         UserDTO updatedUserDTO = userMapper.toDTO(existingUser);
         return ResponseDTO.<UserDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("編集に成功しました。")
+                .message("編集に成功しました")
                 .data(updatedUserDTO)
                 .build();
     }
@@ -232,7 +232,7 @@ public class UserServiceImpl implements UserService {
 
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
-                .message("削除に成功しました。")
+                .message("削除に成功しました")
                 .build();
     }
 
@@ -242,11 +242,11 @@ public class UserServiceImpl implements UserService {
         if (authentication != null && authentication.isAuthenticated()) {
             String email = authentication.getName();
             User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new NotFoundException("ユーザーが見つかりません。"));
+                    .orElseThrow(() -> new NotFoundException("ユーザーが見つかりません"));
 
             return ResponseDTO.<UserDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message("のユーザー取得に成功しました。")
+                    .message("のユーザー取得に成功しました")
                     .data(userMapper.toDTO(user))
                     .build();
         }
@@ -258,9 +258,9 @@ public class UserServiceImpl implements UserService {
         if (authentication != null && authentication.isAuthenticated()) {
             String email = authentication.getName();
             return userRepository.findByEmail(email)
-                    .orElseThrow(() -> new NotFoundException("ユーザーが見つかりません。"));
+                    .orElseThrow(() -> new NotFoundException("ユーザーが見つかりません"));
         }
-        throw new NotFoundException("認証されていません。");
+        throw new NotFoundException("認証されていません");
     }
 
     @Override
@@ -269,7 +269,7 @@ public class UserServiceImpl implements UserService {
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseDTO.<RefreshTokenDTO>builder()
                     .status(HttpStatus.BAD_REQUEST.value())
-                    .message("リフレッシュトークンが必要です。")
+                    .message("リフレッシュトークンが必要です")
                     .build();
         }
 
@@ -282,7 +282,7 @@ public class UserServiceImpl implements UserService {
 
             return ResponseDTO.<RefreshTokenDTO>builder()
                     .status(HttpStatus.OK.value())
-                    .message("アクセストークンが再発行されました。")
+                    .message("アクセストークンが再発行されました")
                     // .token(newAccessToken)
                     // .refreshToken(newRefreshToken)
                     .data(RefreshTokenDTO.builder()
@@ -295,7 +295,7 @@ public class UserServiceImpl implements UserService {
             log.error("Refresh token error: ", e);
             return ResponseDTO.<RefreshTokenDTO>builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
-                    .message("リフレッシュトークンが無効です。再ログインしてください。")
+                    .message("リフレッシュトークンが無効です。再ログインしてください")
                     .build();
         }
     }
