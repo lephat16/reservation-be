@@ -19,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
-import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;

@@ -14,9 +14,12 @@ import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByOrderDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryBySaleOrderFlatDTO;
+import com.example.ReservationApp.dto.response.inventory.StockHistoriesWithDetailDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
+import com.example.ReservationApp.enums.RefType;
+import com.example.ReservationApp.enums.StockChangeType;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.StockHistoryMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
@@ -90,7 +93,7 @@ public class StockHistoryServiceImpl implements StockHistoryService {
      * @return 在庫履歴DTOのリスト
      */
     @Override
-    public ResponseDTO<List<StockHistoryDTO>> getAllStockHistory() {
+    public ResponseDTO<List<StockHistoryDTO>> getAllStockHistories() {
 
         // 全在庫履歴を取得（在庫・商品・倉庫情報も取得）
         List<StockHistory> stockHistories = stockHistoryRepository.findAllWithStockProductWarehouse();
@@ -98,6 +101,20 @@ public class StockHistoryServiceImpl implements StockHistoryService {
 
         // DTOに変換して返す
         return ResponseDTO.<List<StockHistoryDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("在庫履歴の取得に成功しました")
+                .data(stockHistoryDTOs)
+                .build();
+    }
+
+    @Override
+    public ResponseDTO<List<StockHistoriesWithDetailDTO>> getAllStockHistoriesWithDetails() {
+
+        // 全在庫履歴を取得（在庫・商品・倉庫情報も取得）
+        List<StockHistoriesWithDetailDTO> stockHistoryDTOs = stockHistoryRepository.findAllStockHistoriesWithDetails();
+        
+        // DTOに変換して返す
+        return ResponseDTO.<List<StockHistoriesWithDetailDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message("在庫履歴の取得に成功しました")
                 .data(stockHistoryDTOs)

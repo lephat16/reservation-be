@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByOrderDTO;
+import com.example.ReservationApp.dto.response.inventory.StockHistoriesWithDetailDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.service.inventory.StockHistoryService;
 
@@ -41,7 +42,13 @@ public class StockHistoryController {
     @GetMapping("/stock-history/all")
     public ResponseEntity<ResponseDTO<List<StockHistoryDTO>>> getAllStockHistories() {
 
-        return ResponseEntity.ok(stockHistoryService.getAllStockHistory());
+        return ResponseEntity.ok(stockHistoryService.getAllStockHistories());
+    }
+
+    @GetMapping("/stock-history/with-details/all")
+    public ResponseEntity<ResponseDTO<List<StockHistoriesWithDetailDTO>>> getAllStockHistoriesWithDetails() {
+
+        return ResponseEntity.ok(stockHistoryService.getAllStockHistoriesWithDetails());
     }
 
     @GetMapping("/stock-history/inventory-stock/{inventoryStockId}")

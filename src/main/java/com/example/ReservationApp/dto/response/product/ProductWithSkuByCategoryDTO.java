@@ -19,4 +19,5 @@ public class ProductWithSkuByCategoryDTO {
     private String status;
     private BigDecimal  price;
     private Long totalQuantity;
+    private Long totalReservedQuantity;
 }

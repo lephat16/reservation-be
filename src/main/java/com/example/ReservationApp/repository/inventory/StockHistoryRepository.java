@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryBySaleOrderFlatDTO;
+import com.example.ReservationApp.dto.response.inventory.StockHistoriesWithDetailDTO;
+import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 
 import io.lettuce.core.dynamic.annotation.Param;
@@ -101,28 +103,6 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
                         """)
         List<StockHistory> findRecentStockHistory(@Param("fromDate") LocalDateTime fromDate);
 
-        // @Query(value = """
-        // SELECT
-        // sh.id,
-        // wh.location,
-        // wh.name AS warehouse_name,
-        // sh.change_qty,
-        // sh.notes,
-        // p.name AS product_name,
-        // s.name AS supplier_name,
-        // sh.ref_type,
-        // sh.created_at,
-        // sp.supplier_sku
-        // FROM public.inventory_stocks ivs
-        // JOIN warehouses wh ON wh.id = ivs.warehouse_id
-        // JOIN stock_histories sh ON sh.inventory_stock_id = ivs.id
-        // JOIN products p ON p.id = ivs.product_id
-        // JOIN purchase_orders po ON po.id = sh.ref_id
-        // JOIN suppliers s ON s.id = po.supplier_id
-        // JOIN supplier_products sp ON sp.product_id = p.id
-        // WHERE po.id = :poId
-        // ORDER BY sh.created_at DESC
-        // """, nativeQuery = true)
         @Query(value = """
                         SELECT
                                 sh.id,
@@ -175,5 +155,39 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
 
                         """, nativeQuery = true)
         List<InventoryHistoryBySaleOrderFlatDTO> findInventoryHistoryBySaleOrder(@Param("soId") Long soId);
+
+        @Query(value = """
+                        SELECT
+                                sh.id,
+                                sh.inventory_stock_id,
+                                sh.change_qty,
+                                sh.type,
+                                sh.ref_type,
+                                sh.ref_id,
+                                sh.notes,
+                                sh.created_at,
+                        	sp.supplier_sku,
+                                p.name AS productName,
+                                p.unit,
+                        	wh.name AS warehouse_name,
+                        	COALESCE(so_user.name, po_user.name) AS user_name,
+                         	COALESCE(sod.price, pod.cost) AS price,
+                         	COALESCE(s.name, so.customer_name) AS participant_name
+
+                        FROM public.stock_histories sh
+                        JOIN inventory_stocks ins ON ins.id=sh.inventory_stock_id
+                        JOIN supplier_products sp ON sp.id=ins.supplier_product_id
+                        JOIN products p ON p.id=sp.product_id
+                        JOIN warehouses wh ON ins.warehouse_id=wh.id
+                        LEFT JOIN sales_orders so ON sh.ref_id=so.id
+                        LEFT JOIN users so_user ON so_user.id=so.user_id
+                        LEFT JOIN sales_order_details sod ON sod.sales_order_id=so.id
+                        LEFT JOIN purchase_orders po ON sh.ref_id=po.id
+                        LEFT JOIN users po_user ON po_user.id=po.user_id
+                        LEFT JOIN purchase_order_details pod ON pod.purchase_order_id=po.id
+                        LEFT JOIN suppliers s ON po.supplier_id=s.id
+                        ORDER BY id ASC
+                                    """, nativeQuery = true)
+        List<StockHistoriesWithDetailDTO> findAllStockHistoriesWithDetails();
 
 }

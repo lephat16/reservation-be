@@ -108,7 +108,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                     p.unit,
                     p.status,
 					sp.current_price AS price,
-					COALESCE(SUM(ins.quantity), 0) AS totalQuantity
+					COALESCE(SUM(ins.quantity), 0) AS totalQuantity,
+					COALESCE(SUM(ins.reserved_quantity), 0) AS totalReservedQuantity
                 FROM products p
                 JOIN categories c ON c.id = p.category_id
                 JOIN supplier_products sp ON p.id = sp.product_id
