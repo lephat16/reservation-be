@@ -34,5 +34,5 @@ public class StockHistoriesWithDetailDTO {
     private String warehouseName;
     private String userName;
     private BigDecimal price;
-    private String participant_name;
+    private String participantName;
 }

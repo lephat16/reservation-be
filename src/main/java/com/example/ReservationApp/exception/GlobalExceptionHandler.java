@@ -80,6 +80,14 @@ public class GlobalExceptionHandler {
                                 .build();
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
         }
+        @ExceptionHandler(BadRequestException.class)
+        public ResponseEntity<ResponseDTO<Void>> handleBadRequestException(BadRequestException ex) {
+                ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message(ex.getMessage())
+                                .build();
+                return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
+        }
 
         @ExceptionHandler(NameValueRequiredException.class)
         public ResponseEntity<ResponseDTO<Void>> handleValueRequiredException(NameValueRequiredException ex) {

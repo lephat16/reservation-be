@@ -23,6 +23,7 @@ public class WarehouseDTO {
     private String name;
     private String location;
     private WarehouseStatus status;
+    private Integer stockLimit;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

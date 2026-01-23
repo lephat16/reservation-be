@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 /**
  * 仕入先情報を保持するDTOクラス。
  * 
- * このクラスはサプライヤー（仕入先）のID、名前、連絡先、住所などの情報を
+ * このクラスは仕入先（仕入先）のID、名前、連絡先、住所などの情報を
  * データ転送用にカプセル化。
  * 
  * Builderパターンを使用してインスタンスを作成可能。
@@ -32,6 +32,8 @@ public class SupplierDTO {
     private String name;
     @NotBlank(message = "連絡先情報は必須です")
     private String contactInfo;
+    @NotBlank(message = "メールは必須です")
+    private String mail;
     @NotBlank(message = "住所は必須です")
     private String address;
     @NotNull(message = "ステータスは必須です")

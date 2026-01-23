@@ -20,6 +20,7 @@ import com.example.ReservationApp.dto.response.inventory.DeliverStockResultDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.response.inventory.ReceiveStockResultDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
+
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 import com.example.ReservationApp.entity.inventory.Warehouse;
@@ -36,7 +37,9 @@ import com.example.ReservationApp.enums.StockChangeType;
 import com.example.ReservationApp.exception.InvalidCredentialException;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.InventoryStockMapper;
+import com.example.ReservationApp.mapper.ProductMapper;
 import com.example.ReservationApp.mapper.StockHistoryMapper;
+import com.example.ReservationApp.mapper.SupplierProductMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.inventory.WarehouseRepository;
@@ -69,6 +72,8 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     private final StockHistoryService stockHistoryService;
     private final InventoryStockMapper inventoryStockMapper;
     private final StockHistoryMapper stockHistoryMapper;
+    private final ProductMapper productMapper;
+    private final SupplierProductMapper supplierProductMapper;
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SalesOrderRepository salesOrderRepository;
     private final PurchaseOrderDetailRepository poDetailRepository;
@@ -98,6 +103,28 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                 .data(inventoryStockDTOs)
                 .build();
     }
+
+    @Override
+    public ResponseDTO<List<InventoryStockDTO>> getAllStockWithSupplierAndProduct() {
+
+        List<InventoryStock> inventoryStocks = inventoryStockRepository.findAllStockWithSupplierAndProduct();
+        List<InventoryStockDTO> inventoryStockDTOs = inventoryStocks.stream()
+                .map(stock -> {
+                    InventoryStockDTO inventoryStockDTO = inventoryStockMapper.toDTO(stock);
+                    inventoryStockDTO.setProduct(productMapper.toDTO(stock.getProduct()));
+                    inventoryStockDTO.setSupplierProduct(supplierProductMapper.toDTO(stock.getSupplierProduct()));
+                    return inventoryStockDTO;
+                })
+                .collect(Collectors.toList());
+
+        return ResponseDTO.<List<InventoryStockDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("在庫一覧の取得に成功しました")
+                .data(inventoryStockDTOs)
+                .build();
+    }
+
+
 
     /**
      * IDに基づいて単一の在庫情報を取得します。
@@ -385,9 +412,10 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                     .orElseThrow(() -> new NotFoundException(
                             "SupplierProductが存在しません。productId=" + product.getId() +
                                     ", supplierId=" + supplier.getId()));
+                                    
             Long productId = detail.getProduct().getId();
-            int receivedSoFar = receivedQtyMap.getOrDefault(productId, 0);
-            int totalAfterReceive = receivedSoFar + totalReceivedInRequest;
+            int DeliveredSoFar = receivedQtyMap.getOrDefault(productId, 0);
+            int totalAfterReceive = DeliveredSoFar + totalReceivedInRequest;
 
             if (totalAfterReceive > detail.getQty()) {
                 throw new InvalidCredentialException(

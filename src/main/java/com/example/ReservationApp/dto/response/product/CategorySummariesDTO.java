@@ -1,5 +1,8 @@
 package com.example.ReservationApp.dto.response.product;
 
+
+import java.sql.Timestamp;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,4 +15,8 @@ public class CategorySummariesDTO {
     private String products;
     private String suppliers;
     private String status;
+    private String description;
+    private String imageUrl;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 }

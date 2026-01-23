@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.CategoryDTO;
+import com.example.ReservationApp.dto.response.product.CategoryInventorySalesOverviewDTO;
 import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.CategorySummaryDTO;
 
@@ -26,5 +27,7 @@ public interface CategoryService {
     ResponseDTO<List<CategorySummariesDTO>> getAllCategorySummaries();
 
     ResponseDTO<CategorySummaryDTO> getCategorySummariesById(Long categoryId);
+
+    ResponseDTO<CategoryInventorySalesOverviewDTO> getCategorySalesAndInventoryOverviewById(Long categoryId);
     
 }

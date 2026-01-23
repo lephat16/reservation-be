@@ -18,15 +18,13 @@ import com.example.ReservationApp.dto.response.inventory.StockHistoriesWithDetai
 import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
-import com.example.ReservationApp.enums.RefType;
-import com.example.ReservationApp.enums.StockChangeType;
+
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.StockHistoryMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.inventory.WarehouseRepository;
 import com.example.ReservationApp.repository.product.ProductRepository;
-import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
 import com.example.ReservationApp.service.inventory.StockHistoryService;
 
@@ -42,7 +40,6 @@ public class StockHistoryServiceImpl implements StockHistoryService {
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
     private final SalesOrderRepository salesOrderRepository;
-    private final PurchaseOrderRepository purchaseOrderRepository;
 
     /**
      * 在庫履歴を作成します。数量の増減を反映します。

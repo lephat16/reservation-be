@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.WarehouseDTO;
+import com.example.ReservationApp.dto.response.inventory.WarehouseWithTotalChangedQtyDTO;
 import com.example.ReservationApp.entity.inventory.Warehouse;
+import com.example.ReservationApp.exception.BadRequestException;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.InventoryStockMapper;
 import com.example.ReservationApp.mapper.WarehouseMapper;
@@ -174,6 +176,9 @@ public class WarehouseServiceImpl implements WarehouseService {
         if (warehouseDTO.getName() != null && !warehouseDTO.getName().isBlank()) {
             existingWarehouse.setName(warehouseDTO.getName());
         }
+        if (warehouseDTO.getStockLimit() != null && warehouseDTO.getStockLimit() > 0) {
+            existingWarehouse.setStockLimit(warehouseDTO.getStockLimit());
+        }
         if (warehouseDTO.getLocation() != null && !warehouseDTO.getLocation().isBlank()) {
             existingWarehouse.setLocation(warehouseDTO.getLocation());
         }
@@ -200,9 +205,13 @@ public class WarehouseServiceImpl implements WarehouseService {
     @Override
     public ResponseDTO<Void> deleteWarehouse(Long warehouseId) {
         // 対象倉庫を取得。存在しなければ例外
-        Warehouse existingWarehouse = warehouseRepository.findById(warehouseId)
+        Warehouse existingWarehouse = warehouseRepository.findByIdWithStocks(warehouseId)
                 .orElseThrow(() -> new NotFoundException("倉庫は存在していません。ID = " + warehouseId));
-
+        boolean hasStockLeft = existingWarehouse.getInventoryStocks().stream()
+                .anyMatch(stock -> stock.getQuantity() > 0);
+        if (hasStockLeft) {
+            throw new BadRequestException("倉庫には在庫が残っているため、削除できません。");
+        }
         // 削除
         warehouseRepository.delete(existingWarehouse);
 
@@ -212,4 +221,15 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .build();
     }
 
+    @Override
+    public ResponseDTO<List<WarehouseWithTotalChangedQtyDTO>> getWarehouseWithTotalChangedQty() {
+        // 住所に部分一致する倉庫を検索
+        List<WarehouseWithTotalChangedQtyDTO> warehouses = warehouseRepository.findWarehouseWithTotalChangedQty();
+
+        return ResponseDTO.<List<WarehouseWithTotalChangedQtyDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("倉庫情報の取得に成功しました")
+                .data(warehouses)
+                .build();
+    }
 }

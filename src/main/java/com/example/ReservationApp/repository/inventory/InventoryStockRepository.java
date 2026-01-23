@@ -97,4 +97,14 @@ public interface InventoryStockRepository extends JpaRepository<InventoryStock, 
                         WHERE p.id =  :productId
                                 """, nativeQuery = true)
         List<Object[]> findStockWithWarehouseAndQtyByProductId(@Param("productId") Long productId);
+
+         @Query("""
+                        SELECT s FROM InventoryStock s
+                        JOIN FETCH s.product p
+                        JOIN FETCH p.category
+                        JOIN FETCH s.supplierProduct sp
+                        JOIN FETCH sp.supplier
+                        JOIN FETCH s.warehouse
+                        """)
+        List<InventoryStock> findAllStockWithSupplierAndProduct();
 }

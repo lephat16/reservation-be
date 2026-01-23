@@ -16,6 +16,8 @@ public interface InventoryStockMapper {
     @Mapping(target = "sku", source = "supplierProduct.supplierSku")
     @Mapping(target = "warehouseName", source = "warehouse.name")
     @Mapping(target = "stockHistories", ignore = true) // handle separately
+    @Mapping(target = "product", ignore = true) // handle separately
+    @Mapping(target = "supplierProduct", ignore = true) // handle separately
     InventoryStockDTO toDTO(InventoryStock stock);
 
     List<InventoryStockDTO> toDTOList(List<InventoryStock> stocks);

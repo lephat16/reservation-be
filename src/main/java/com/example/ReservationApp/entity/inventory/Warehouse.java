@@ -33,10 +33,16 @@ public class Warehouse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 100)
     private String name;
+
+    @Column(length = 255)
     private String location;
     @Enumerated(EnumType.STRING)
     private WarehouseStatus status;
+
+    @Column(nullable = false)
+    private Integer stockLimit;
 
     private LocalDateTime createdAt;
 

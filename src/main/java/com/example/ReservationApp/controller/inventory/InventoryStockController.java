@@ -70,6 +70,12 @@ public class InventoryStockController {
         return ResponseEntity.ok(inventoryStockService.getAllInventoryStocks());
     }
 
+    @GetMapping("/all-with-supplier")
+    public ResponseEntity<ResponseDTO<List<InventoryStockDTO>>> getAllStockWithSupplierAndProduct() {
+
+        return ResponseEntity.ok(inventoryStockService.getAllStockWithSupplierAndProduct());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO<InventoryStockDTO>> getInventoryStockById(@PathVariable Long id) {
 

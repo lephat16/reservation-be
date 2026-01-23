@@ -2,6 +2,8 @@ package com.example.ReservationApp.dto.response.inventory;
 
 import java.util.List;
 
+import com.example.ReservationApp.dto.response.product.ProductDTO;
+import com.example.ReservationApp.dto.supplier.SupplierProductDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -26,4 +28,7 @@ public class InventoryStockDTO {
     private Integer reservedQuantity ;
 
     private List<StockHistoryDTO> stockHistories;
+    private ProductDTO product;
+    private SupplierProductDTO supplierProduct;
+    
 }

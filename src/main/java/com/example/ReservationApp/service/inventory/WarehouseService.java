@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.WarehouseDTO;
+import com.example.ReservationApp.dto.response.inventory.WarehouseWithTotalChangedQtyDTO;
 
 public interface WarehouseService {
 
@@ -22,6 +23,7 @@ public interface WarehouseService {
     ResponseDTO<Void> deleteWarehouse(Long warehouseId);
 
     ResponseDTO<List<WarehouseDTO>> getWarehouseBySkuWithStocks(String sku);
-
+    
+    ResponseDTO<List<WarehouseWithTotalChangedQtyDTO>> getWarehouseWithTotalChangedQty();
     
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.inventory.WarehouseDTO;
+import com.example.ReservationApp.dto.response.inventory.WarehouseWithTotalChangedQtyDTO;
 import com.example.ReservationApp.service.inventory.WarehouseService;
 
 import lombok.RequiredArgsConstructor;
@@ -56,15 +57,19 @@ public class WarehouseController {
     public ResponseEntity<ResponseDTO<List<WarehouseDTO>>> getWarehouseBySkuWithStocks(@PathVariable String sku) {
         return ResponseEntity.ok(warehouseService.getWarehouseBySkuWithStocks(sku));
     }
+    @GetMapping("/all-with-total-changed-qty")
+    public ResponseEntity<ResponseDTO<List<WarehouseWithTotalChangedQtyDTO>>> getWarehouseWithTotalChangedQty() {
+        return ResponseEntity.ok(warehouseService.getWarehouseWithTotalChangedQty());
+    }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<ResponseDTO<WarehouseDTO>> updateWarehouse(
             @PathVariable Long id,
             @RequestBody WarehouseDTO warehouseDTO) {
         return ResponseEntity.ok(warehouseService.updateWarehouse(id, warehouseDTO));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO<Void>> deleteWarehouse(@PathVariable Long id) {
         return ResponseEntity.ok(warehouseService.deleteWarehouse(id));
     }

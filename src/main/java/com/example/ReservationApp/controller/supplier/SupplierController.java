@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 仕入先（サプライヤー）管理用のRESTコントローラー。
+ * 仕入先（仕入先）管理用のRESTコントローラー。
  * 
  * このコントローラーは、仕入先の追加、取得、更新、削除
  * CRUD操作を提供。

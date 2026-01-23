@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoFlatDTO;
 import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.entity.product.Product;

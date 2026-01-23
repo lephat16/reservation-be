@@ -9,7 +9,6 @@ import org.springframework.data.jpa.repository.Query;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryByPurchaseOrderFlatDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryHistoryBySaleOrderFlatDTO;
 import com.example.ReservationApp.dto.response.inventory.StockHistoriesWithDetailDTO;
-import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 
 import io.lettuce.core.dynamic.annotation.Param;
@@ -184,7 +183,7 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
                         LEFT JOIN sales_order_details sod ON sod.sales_order_id=so.id
                         LEFT JOIN purchase_orders po ON sh.ref_id=po.id
                         LEFT JOIN users po_user ON po_user.id=po.user_id
-                        LEFT JOIN purchase_order_details pod ON pod.purchase_order_id=po.id
+                        LEFT JOIN purchase_order_details pod ON pod.purchase_order_id=po.id AND ins.product_id=pod.product_id
                         LEFT JOIN suppliers s ON po.supplier_id=s.id
                         ORDER BY id ASC
                                     """, nativeQuery = true)

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.CategoryDTO;
+import com.example.ReservationApp.dto.response.product.CategoryInventorySalesOverviewDTO;
 import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.CategorySummaryDTO;
 import com.example.ReservationApp.dto.response.product.ProductStockDTO;
@@ -210,6 +211,16 @@ public class CategoryServiceImpl implements CategoryService {
                                 .status(HttpStatus.OK.value())
                                 .message("取得に成功しました")
                                 .data(summaryDTOs)
+                                .build();
+        }
+        @Override
+        public ResponseDTO<CategoryInventorySalesOverviewDTO > getCategorySalesAndInventoryOverviewById(Long categoryId) {
+                CategoryInventorySalesOverviewDTO categoryInventorySalesOverviewDTO = categoryRepository.findCategorySalesAndInventoryOverviewById(categoryId);
+
+                return ResponseDTO.<CategoryInventorySalesOverviewDTO >builder()
+                                .status(HttpStatus.OK.value())
+                                .message("取得に成功しました")
+                                .data(categoryInventorySalesOverviewDTO)
                                 .build();
         }
 
