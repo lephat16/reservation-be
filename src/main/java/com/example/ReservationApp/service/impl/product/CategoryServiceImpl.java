@@ -94,7 +94,7 @@ public class CategoryServiceImpl implements CategoryService {
         @Override
         public ResponseDTO<CategoryDTO> getCategoryById(Long id) {
                 Category category = categoryRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException(("このカテゴリは存在していません。ID:")));
+                                .orElseThrow(() -> new NotFoundException(("このカテゴリは存在していません。ID:" + id)));
 
                 return ResponseDTO.<CategoryDTO>builder()
                                 .status(HttpStatus.OK.value())

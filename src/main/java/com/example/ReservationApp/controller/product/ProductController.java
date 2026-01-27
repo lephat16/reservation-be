@@ -2,9 +2,11 @@ package com.example.ReservationApp.controller.product;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -48,9 +50,9 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDTO<ProductDTO>> updateProduct(@PathVariable Long id,
-            @RequestBody ProductDTO productDTO) {
+            @ModelAttribute  ProductDTO productDTO) {
 
         return ResponseEntity.ok(productService.updateProduct(id, productDTO));
     }
@@ -60,7 +62,6 @@ public class ProductController {
 
         return ResponseEntity.ok(productService.deleteProduct(id));
     }
-
 
     @GetMapping("/by-category/{id}")
     public ResponseEntity<ResponseDTO<List<ProductDTO>>> getProductsByCategory(@PathVariable Long id) {
@@ -91,16 +92,19 @@ public class ProductController {
 
         return ResponseEntity.ok(productService.getProductInfoDetail(id));
     }
+
     @GetMapping("/received-qty/{poId}")
-    public ResponseEntity<ResponseDTO<List<SumReceivedGroupByProductDTO>>> getSumReceivedQtyByPoGroupByProduct(@PathVariable Long poId) {
+    public ResponseEntity<ResponseDTO<List<SumReceivedGroupByProductDTO>>> getSumReceivedQtyByPoGroupByProduct(
+            @PathVariable Long poId) {
 
         return ResponseEntity.ok(productService.getSumReceivedQtyByPoGroupByProduct(poId));
     }
+
     @GetMapping("/with-sku-by-category/{categoryId}")
-    public ResponseEntity<ResponseDTO<List<ProductWithSkuByCategoryDTO>>> getAllSupllierProductWithSkuByCategory(@PathVariable Long categoryId) {
+    public ResponseEntity<ResponseDTO<List<ProductWithSkuByCategoryDTO>>> getAllSupllierProductWithSkuByCategory(
+            @PathVariable Long categoryId) {
 
         return ResponseEntity.ok(productService.getAllSupllierProductWithSkuByCategory(categoryId));
     }
-
 
 }

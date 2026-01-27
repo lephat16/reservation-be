@@ -2,6 +2,7 @@ package com.example.ReservationApp.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -25,8 +26,39 @@ public class SecurityConfig {
     private final CustomAccessDenialHandler customAccessDenialHandler;
 
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-    
+
     private final AuthFilter authFilter;
+
+    /**
+     * セキュリティフィルターチェーンを構築。Swagger のルートに関するセキュリティ設定。
+     * - Swaggerにアクセスできるように公開設定。
+     * - Swaggerのルートに対するリクエストを許可し、それ以外のリクエストはすべて拒否。
+     * 
+     * @param httpSecurity HttpSecurityオブジェクト
+     * @return SecurityFilterChain
+     * @throws Exception セキュリティ設定時の例外
+     */
+    @Bean
+    @Order(1)
+    public SecurityFilterChain swaggerSecurity(HttpSecurity httpSecurity) throws Exception {
+        httpSecurity.csrf(csrf -> csrf.disable()) // CSRF保護を無効化（Swaggerの場合は不要）
+                .cors(Customizer.withDefaults()) // CORS設定をデフォルトで有効化
+                .authorizeHttpRequests(request -> request
+                        .requestMatchers(
+                                "/swagger-ui/**", // Swagger UI
+                                "/v3/api-docs/**", // Swagger Docs
+                                "/v3/api-docs.yaml", // Swagger YAML
+                                "/swagger-ui/index.html", // Swaggerのインデックスページ
+                                "/swagger-ui/oauth2-redirect.html", // SwaggerのOAuth2リダイレクト
+                                "/webjars/**" // Swagger WebJars
+                        ).permitAll() // これらのエンドポイントへのアクセスは全て許可
+                        .anyRequest().denyAll()) // その他のリクエストは全て拒否
+
+                // Swagger用のセキュリティマッチャーを適用、Swaggerルートに対してのみ適用される
+                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui/index.html", "/webjars/**");
+
+        return httpSecurity.build();
+    }
 
     /**
      * セキュリティフィルターチェーンを構築。
@@ -40,19 +72,19 @@ public class SecurityConfig {
      * @return SecurityFilterChain
      * @throws Exception フィルター設定時の例外
      */
-    @Bean 
+    @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(csrf -> csrf.disable())
-                    .cors(Customizer.withDefaults())
-                    .exceptionHandling(exception -> exception
+                .cors(Customizer.withDefaults())
+                .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
-                        .accessDeniedHandler(customAccessDenialHandler)
-                    )
-                    .authorizeHttpRequests(request -> request
+                        .accessDeniedHandler(customAccessDenialHandler))
+                .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                    )
-                    .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
+                        .anyRequest().authenticated())
+                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
+                .securityMatcher("/api/**");
         return httpSecurity.build();
     }
 
@@ -74,7 +106,8 @@ public class SecurityConfig {
      * @throws Exception 取得時の例外
      */
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception{
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 }

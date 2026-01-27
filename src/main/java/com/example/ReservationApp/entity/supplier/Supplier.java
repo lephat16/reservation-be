@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,19 +46,21 @@ public class Supplier {
 
     @NotBlank(message = "連絡先情報は必須です")
     @Column(nullable = false)
-    @Pattern(regexp = "^(0\\d{1,4}-?\\d{1,4}-?\\d{4})$", message = "電話番号の形式が正しくありません")
+    @Pattern(regexp = "^[0-9+()\\-\\s]{8,20}$", message = "電話番号の形式が正しくありません")
     private String contactInfo;
 
     @NotBlank(message = "メールは必須です")
     @Email(message = "メール形式が正しくありません")
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 255)
     private String mail;
 
     @NotBlank(message = "住所は必須です")
-    @Column(nullable = false)
+    @Column(nullable = false, length = 255)
     private String address;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     @Builder.Default
     private SupplierStatus status = SupplierStatus.ACTIVE; // ACTIVE / INACTIVE
 
