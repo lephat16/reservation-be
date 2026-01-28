@@ -1,5 +1,6 @@
 package com.example.ReservationApp.service.impl.product;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.CategoryDTO;
@@ -27,6 +29,7 @@ import com.example.ReservationApp.mapper.CategoryMapper;
 import com.example.ReservationApp.repository.product.CategoryRepository;
 import com.example.ReservationApp.exception.AlreadyExistException;
 import com.example.ReservationApp.exception.CannotDeleteException;
+import com.example.ReservationApp.service.StorageService;
 import com.example.ReservationApp.service.product.CategoryService;
 
 import lombok.RequiredArgsConstructor;
@@ -44,6 +47,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         private final CategoryRepository categoryRepository;
         private final CategoryMapper categoryMapper;
+        private final StorageService storageService;
 
         /**
          * 新しいカテゴリを作成。
@@ -53,10 +57,30 @@ public class CategoryServiceImpl implements CategoryService {
          * @return 作成結果を含むResponseDTO
          */
         @Override
-        public ResponseDTO<CategoryDTO> createCategory(CategoryDTO categoryDTO) {
+        public ResponseDTO<CategoryDTO> createCategory(CategoryDTO categoryDTO, MultipartFile file) {
+                String imagePath = null;
+                try {
+                        if (file != null && !file.isEmpty()) {
+                                imagePath = storageService.storeFile(file);
+                        } else if (categoryDTO.getImageUrl() != null && !categoryDTO.getImageUrl().isBlank()) {
+                                String imageBase64 = categoryDTO.getImageUrl();
+                                if (imageBase64.startsWith("data:image")) {
+                                        imagePath = storageService.storeBase64Image(imageBase64);
+                                } else {
+                                        imagePath = imageBase64;
+                                }
+                        } else {
+                                throw new IllegalArgumentException("画像が必要です");
+                        }
+                } catch (IOException e) {
+                        throw new RuntimeException("画像の保存中にエラーが発生しました", e);
+                }
                 if (categoryRepository.existsByname(categoryDTO.getName())) {
                         throw new AlreadyExistException("このカテゴリはすでに存在しています");
                 }
+
+                categoryDTO.setImageUrl(imagePath);
+
                 Category newCategory = categoryMapper.toEntity(categoryDTO);
                 categoryRepository.save(newCategory);
                 categoryDTO.setId(newCategory.getId());
@@ -126,22 +150,37 @@ public class CategoryServiceImpl implements CategoryService {
          * @return 更新結果を含むResponseDTO
          */
         @Override
-        public ResponseDTO<CategoryDTO> updateCategory(Long id, CategoryDTO categoryDTO) {
+        public ResponseDTO<CategoryDTO> updateCategory(Long id, CategoryDTO categoryDTO, MultipartFile file) {
                 Category existingCategory = categoryRepository.findById(id)
-                                .orElseThrow(() -> new NotFoundException("このカテゴリは見つかりません"));
-
+                                .orElseThrow(() -> new NotFoundException("このカテゴリは存在していません"));
+                String imgPath = null;
+                try {
+                        if (file != null && !file.isEmpty()) {
+                                imgPath = storageService.storeFile(file);
+                        } else if (categoryDTO.getImageUrl() != null &&
+                                        !categoryDTO.getImageUrl().isBlank()) {
+                                String imageBase64 = categoryDTO.getImageUrl();
+                                if (imageBase64.startsWith("data:image")) {
+                                        imgPath = storageService.storeBase64Image(imageBase64);
+                                } else {
+                                        imgPath = imageBase64;
+                                }
+                        } else {
+                                throw new IllegalArgumentException("画像が必要です");
+                        }
+                } catch (IOException e) {
+                        throw new RuntimeException("画像の保存中にエラーが発生しました", e);
+                }
                 if (categoryDTO.getName() != null && !categoryDTO.getName().isBlank()) {
                         existingCategory.setName(categoryDTO.getName());
                 }
                 if (categoryDTO.getDescription() != null && !categoryDTO.getDescription().isBlank()) {
                         existingCategory.setDescription(categoryDTO.getDescription());
                 }
-                if (categoryDTO.getImageUrl() != null && !categoryDTO.getImageUrl().isBlank()) {
-                        existingCategory.setImageUrl(categoryDTO.getImageUrl());
-                }
                 if (categoryDTO.getStatus() != null) {
                         existingCategory.setStatus(categoryDTO.getStatus());
                 }
+                existingCategory.setImageUrl(imgPath);
 
                 categoryRepository.save(existingCategory);
 
@@ -213,11 +252,14 @@ public class CategoryServiceImpl implements CategoryService {
                                 .data(summaryDTOs)
                                 .build();
         }
-        @Override
-        public ResponseDTO<CategoryInventorySalesOverviewDTO > getCategorySalesAndInventoryOverviewById(Long categoryId) {
-                CategoryInventorySalesOverviewDTO categoryInventorySalesOverviewDTO = categoryRepository.findCategorySalesAndInventoryOverviewById(categoryId);
 
-                return ResponseDTO.<CategoryInventorySalesOverviewDTO >builder()
+        @Override
+        public ResponseDTO<CategoryInventorySalesOverviewDTO> getCategorySalesAndInventoryOverviewById(
+                        Long categoryId) {
+                CategoryInventorySalesOverviewDTO categoryInventorySalesOverviewDTO = categoryRepository
+                                .findCategorySalesAndInventoryOverviewById(categoryId);
+
+                return ResponseDTO.<CategoryInventorySalesOverviewDTO>builder()
                                 .status(HttpStatus.OK.value())
                                 .message("取得に成功しました")
                                 .data(categoryInventorySalesOverviewDTO)

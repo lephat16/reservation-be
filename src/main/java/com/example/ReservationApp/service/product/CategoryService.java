@@ -2,6 +2,8 @@ package com.example.ReservationApp.service.product;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.CategoryDTO;
 import com.example.ReservationApp.dto.response.product.CategoryInventorySalesOverviewDTO;
@@ -10,7 +12,7 @@ import com.example.ReservationApp.dto.response.product.CategorySummaryDTO;
 
 public interface CategoryService {
 
-    ResponseDTO<CategoryDTO> createCategory(CategoryDTO categoryDTO);
+    ResponseDTO<CategoryDTO> createCategory(CategoryDTO categoryDTO, MultipartFile file);
 
     ResponseDTO<List<CategoryDTO>> getAllCategories();
 
@@ -18,7 +20,7 @@ public interface CategoryService {
 
     ResponseDTO<CategoryDTO> getCategoryByName(String name);
 
-    ResponseDTO<CategoryDTO> updateCategory(Long id, CategoryDTO categoryDTO);
+    ResponseDTO<CategoryDTO> updateCategory(Long id, CategoryDTO categoryDTO, MultipartFile file);
 
     ResponseDTO<Void> deleteCategory(Long id);
 
@@ -29,5 +31,5 @@ public interface CategoryService {
     ResponseDTO<CategorySummaryDTO> getCategorySummariesById(Long categoryId);
 
     ResponseDTO<CategoryInventorySalesOverviewDTO> getCategorySalesAndInventoryOverviewById(Long categoryId);
-    
+
 }

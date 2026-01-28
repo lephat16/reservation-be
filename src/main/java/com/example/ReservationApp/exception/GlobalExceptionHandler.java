@@ -80,6 +80,7 @@ public class GlobalExceptionHandler {
                                 .build();
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
         }
+
         @ExceptionHandler(BadRequestException.class)
         public ResponseEntity<ResponseDTO<Void>> handleBadRequestException(BadRequestException ex) {
                 ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()
@@ -148,6 +149,16 @@ public class GlobalExceptionHandler {
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
         }
 
+        @ExceptionHandler(IllegalArgumentException.class)
+        public ResponseEntity<ResponseDTO<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+
+                ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()
+                                .status(HttpStatus.BAD_REQUEST.value())
+                                .message(ex.getMessage())
+                                .build();
+                return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
+        }
+
         @ExceptionHandler(CannotDeleteException.class)
         public ResponseEntity<ResponseDTO<Void>> handleCannotDeleteException(CannotDeleteException ex) {
 
@@ -156,7 +167,7 @@ public class GlobalExceptionHandler {
                                 .message(ex.getMessage())
                                 .build();
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
-                
+
         }
 
         @ExceptionHandler(InvalidActionException.class)
@@ -168,6 +179,7 @@ public class GlobalExceptionHandler {
 
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
         }
+
         @ExceptionHandler(UnauthorizedException.class)
         public ResponseEntity<ResponseDTO<Void>> UnauthorizedException(UnauthorizedException ex) {
                 ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()

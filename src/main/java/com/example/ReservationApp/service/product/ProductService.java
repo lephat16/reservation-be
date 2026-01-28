@@ -3,7 +3,6 @@ package com.example.ReservationApp.service.product;
 import java.util.List;
 
 import com.example.ReservationApp.dto.ResponseDTO;
-import com.example.ReservationApp.dto.response.product.CategorySummariesDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;

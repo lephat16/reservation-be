@@ -8,9 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.product.CategoryDTO;
@@ -25,13 +26,15 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
 public class CategoryController {
-    
+
     private final CategoryService categoryService;
 
     @PostMapping("/add")
-    public ResponseEntity<ResponseDTO<CategoryDTO>> createCategory(@RequestBody @Valid CategoryDTO categoryDTO) {
+    public ResponseEntity<ResponseDTO<CategoryDTO>> createCategory(
+            @RequestPart("category") @Valid CategoryDTO categoryDTO,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        return ResponseEntity.ok(categoryService.createCategory(categoryDTO));
+        return ResponseEntity.ok(categoryService.createCategory(categoryDTO, file));
     }
 
     @GetMapping("/all")
@@ -47,9 +50,12 @@ public class CategoryController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<ResponseDTO<CategoryDTO>> updateCategory(@PathVariable Long id, @RequestBody @Valid CategoryDTO categoryDTO) {
+    public ResponseEntity<ResponseDTO<CategoryDTO>> updateCategory(
+            @PathVariable Long id,
+            @RequestPart("category") @Valid CategoryDTO categoryDTO,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
 
-        return ResponseEntity.ok(categoryService.updateCategory(id, categoryDTO));
+        return ResponseEntity.ok(categoryService.updateCategory(id, categoryDTO, file));
     }
 
     @DeleteMapping("/delete/{id}")
