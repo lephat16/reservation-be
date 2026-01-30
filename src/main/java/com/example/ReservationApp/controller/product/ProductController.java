@@ -16,11 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.response.product.ProductDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
 import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
+import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.service.product.ProductService;
 
 import lombok.RequiredArgsConstructor;
@@ -52,7 +54,7 @@ public class ProductController {
 
     @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDTO<ProductDTO>> updateProduct(@PathVariable Long id,
-            @ModelAttribute  ProductDTO productDTO) {
+            @ModelAttribute ProductDTO productDTO) {
 
         return ResponseEntity.ok(productService.updateProduct(id, productDTO));
     }
@@ -107,4 +109,9 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllSupllierProductWithSkuByCategory(categoryId));
     }
 
+    @GetMapping("/all/with-inventory-optional")
+    public ResponseEntity<ResponseDTO<List<InventoryStockDTO>>> getAllProductsWithInventoryOptional() {
+
+        return ResponseEntity.ok(productService.getAllProductsWithInventoryOptional());
+    }
 }

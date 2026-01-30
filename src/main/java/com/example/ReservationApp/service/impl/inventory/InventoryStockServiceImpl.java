@@ -124,8 +124,6 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                 .build();
     }
 
-
-
     /**
      * IDに基づいて単一の在庫情報を取得します。
      * 
@@ -412,7 +410,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                     .orElseThrow(() -> new NotFoundException(
                             "SupplierProductが存在しません。productId=" + product.getId() +
                                     ", supplierId=" + supplier.getId()));
-                                    
+
             Long productId = detail.getProduct().getId();
             int DeliveredSoFar = receivedQtyMap.getOrDefault(productId, 0);
             int totalAfterReceive = DeliveredSoFar + totalReceivedInRequest;
@@ -455,7 +453,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
             stock.setSupplierProduct(sp);
             inventoryStockRepository.save(stock);
-            
+
             StockHistory history = new StockHistory();
             history.setInventoryStock(stock);
             history.setChangeQty(totalReceivedInRequest);

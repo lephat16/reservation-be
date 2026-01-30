@@ -53,7 +53,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                FROM products p
                JOIN categories c ON p.category_id = c.id
                LEFT JOIN supplier_products sp ON sp.product_id = p.id
-               INNER JOIN suppliers s ON s.id = sp.supplier_id
+               LEFT JOIN suppliers s ON s.id = sp.supplier_id
                LEFT JOIN inventory_stocks i ON i.product_id = p.id
                LEFT JOIN warehouses w ON w.id = i.warehouse_id
                WHERE p.id = :productId
@@ -82,7 +82,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                FROM products p
                JOIN categories c ON p.category_id = c.id
                LEFT JOIN supplier_products sp ON sp.product_id = p.id
-               INNER JOIN suppliers s ON s.id = sp.supplier_id
+               LEFT JOIN suppliers s ON s.id = sp.supplier_id
                LEFT JOIN inventory_stocks i ON i.product_id = p.id
                LEFT JOIN warehouses w ON w.id = i.warehouse_id
                GROUP BY
@@ -98,23 +98,47 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<ProductInfoFlatDTO> getAllProductWithSupplierAndStock();
 
     @Query(value = """
-                SELECT
-                    sp.id AS supplier_product_id,
-                    p.name AS product_name,
-                    p.id AS product_id,
-                    c.name AS category_name,
-                    sp.supplier_sku AS sku,
-                    p.unit,
-                    p.status,
-					sp.current_price AS price,
-					COALESCE(SUM(ins.quantity), 0) AS totalQuantity,
-					COALESCE(SUM(ins.reserved_quantity), 0) AS totalReservedQuantity
-                FROM products p
-                JOIN categories c ON c.id = p.category_id
-                JOIN supplier_products sp ON p.id = sp.product_id
-                JOIN inventory_stocks ins ON ins.supplier_product_id = sp.id
-                WHERE c.id = :categoryId
-                GROUP BY sp.id, p.id, p.name, c.name, p.unit, p.status
-            """, nativeQuery = true)
+            SELECT
+                sp.id AS supplier_product_id,
+                p.name AS product_name,
+                p.id AS product_id,
+                c.name AS category_name,
+                sp.supplier_sku AS sku,
+                p.unit,
+                p.status,
+                sp.current_price AS price,
+                COALESCE(SUM(ins.quantity), 0) AS totalQuantity,
+                COALESCE(SUM(ins.reserved_quantity), 0) AS totalReservedQuantity
+            FROM products p
+            JOIN categories c ON c.id = p.category_id
+            JOIN supplier_products sp ON p.id = sp.product_id
+            JOIN inventory_stocks ins ON ins.supplier_product_id = sp.id
+            WHERE c.id = :categoryId
+            GROUP BY sp.id, p.id, p.name, c.name, p.unit, p.status
+               """, nativeQuery = true)
     List<ProductWithSkuByCategoryDTO> findAllSupllierProductWithSkuByCategory(@Param("categoryId") Long categoryId);
+
+    // @Query("""
+    // SELECT p
+    // FROM Product p
+    // WHERE NOT EXISTS (
+    // SELECT 1
+    // FROM InventoryStock ins
+    // WHERE ins.product = p
+    // )
+    // ORDER BY p.id DESC
+    // """)
+    // List<Product> findProductsWithoutInventory();
+
+    @Query("""
+                SELECT p
+                FROM Product p
+                LEFT JOIN FETCH p.inventoryStocks ins
+                LEFT JOIN FETCH p.category
+                LEFT JOIN FETCH ins.supplierProduct s
+                LEFT JOIN FETCH s.supplier
+                LEFT JOIN FETCH ins.warehouse
+            """)
+    List<Product> findAllProductsWithInventoryOptional();
+
 }

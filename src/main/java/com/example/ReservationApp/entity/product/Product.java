@@ -1,5 +1,9 @@
 package com.example.ReservationApp.entity.product;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.enums.ProductStatus;
 
 import jakarta.persistence.Column;
@@ -12,6 +16,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -66,4 +71,8 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<InventoryStock> inventoryStocks = new ArrayList<>();
 }

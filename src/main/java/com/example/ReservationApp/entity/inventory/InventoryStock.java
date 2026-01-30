@@ -16,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -54,4 +55,8 @@ public class InventoryStock {
     @OneToMany(mappedBy = "inventoryStock")
     @Builder.Default
     private List<StockHistory> stockHistories = new ArrayList<>();
+
+    @Transient
+    // 商品は存在するが在庫データが未登録の場合に使用する仮フラグ
+    private boolean virtual;
 }

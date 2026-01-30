@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.transaction.WeeklyMonthlySalesDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
+import com.example.ReservationApp.entity.product.Product;
 import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
@@ -19,6 +21,7 @@ import com.example.ReservationApp.exception.InvalidCredentialException;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.SalesOrderDetailMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
+import com.example.ReservationApp.repository.product.ProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
@@ -54,6 +57,7 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         private final SupplierProductRepository supplierProductRepository;
         private final SalesOrderDetailMapper soDetailMapper;
         private final InventoryStockRepository inventoryStockRepository;
+        private final ProductRepository productRepository;
 
         /**
          * SalesOrder に新しい detail を追加する。
@@ -87,16 +91,16 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                 }
 
                 // Product product = productRepository.findById(soDetailDTO.getProductId())
-                //                 .orElseThrow(() -> new NotFoundException("この商品は存在していません"));
+                // .orElseThrow(() -> new NotFoundException("この商品は存在していません"));
 
                 SupplierProduct supplierProduct = supplierProductRepository.findBySupplierSku(soDetailDTO.getSku())
                                 .orElseThrow(() -> new NotFoundException("SKUが存在しません: " + soDetailDTO.getSku()));
 
                 // 既存明細があるか確認（同一注文＋同一商品）
                 // Optional<SalesOrderDetail> existingProductInDetails = soDetailRepository
-                //                 .findBySalesOrderIdAndProductId(
-                //                                 salesOrderId,
-                //                                 product.getId());
+                // .findBySalesOrderIdAndProductId(
+                // salesOrderId,
+                // product.getId());
 
                 Optional<SalesOrderDetail> existingDetails = soDetailRepository
                                 .findBySalesOrderIdAndSupplierProductId(salesOrderId, supplierProduct.getId());
@@ -244,5 +248,21 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
                 so.setTotal(total);
                 // soRepository.save(so);
+        }
+
+        @Override
+        public ResponseDTO<List<WeeklyMonthlySalesDTO>> getWeeklySalesByProduct(Long productId) {
+                if (!productRepository.existsById(productId)) {
+                        throw new NotFoundException("この商品は存在していません");
+                }
+
+                List<WeeklyMonthlySalesDTO> weeklyMonthlySalesDTOs = soDetailRepository
+                                .findWeeklySalesByProduct(productId);
+
+                return ResponseDTO.<List<WeeklyMonthlySalesDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("詳細情報の取得に成功しました")
+                                .data(weeklyMonthlySalesDTOs)
+                                .build();
         }
 }

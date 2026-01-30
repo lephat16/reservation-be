@@ -9,6 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ import com.example.ReservationApp.dto.response.product.ProductInfoFlatDTO;
 import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
 import com.example.ReservationApp.dto.response.product.SupplierPriceDTO;
+import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.product.Category;
 import com.example.ReservationApp.entity.product.Product;
 import com.example.ReservationApp.enums.ProductStatus;
@@ -33,7 +35,9 @@ import com.example.ReservationApp.enums.StockChangeType;
 import com.example.ReservationApp.exception.AlreadyExistException;
 import com.example.ReservationApp.exception.CannotDeleteException;
 import com.example.ReservationApp.exception.NotFoundException;
+import com.example.ReservationApp.mapper.InventoryStockMapper;
 import com.example.ReservationApp.mapper.ProductMapper;
+import com.example.ReservationApp.mapper.SupplierProductMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.product.CategoryRepository;
@@ -64,6 +68,8 @@ public class ProductServiceImpl implements ProductService {
     private final StockHistoryRepository stockHistoryRepository;
     private final InventoryStockRepository inventoryStockRepository;
     private final PurchaseOrderRepository poRepository;
+    private final SupplierProductMapper supplierProductMapper;
+    private final InventoryStockMapper inventoryStockMapper;
 
     /**
      * 新しい商品を作成する。
@@ -78,7 +84,7 @@ public class ProductServiceImpl implements ProductService {
         Product createdProduct = productMapper.toEntity(productDTO);
         if (productDTO.getCategoryName() != null && !productDTO.getCategoryName().isBlank()) {
             Category existingCategory = categoryRepository.findByName(productDTO.getCategoryName())
-                    .orElseThrow(() -> new NotFoundException("この製品はどのカテゴリにも属していません"));
+                    .orElseThrow(() -> new NotFoundException("このカテゴリに存在していません"));
             createdProduct.setCategory(existingCategory);
         }
         if (productRepository.existsByProductCode(productDTO.getProductCode())) {
@@ -460,12 +466,44 @@ public class ProductServiceImpl implements ProductService {
             throw new NotFoundException(("このカテゴリは存在していません。ID:" + categoryId));
         }
 
-        List<ProductWithSkuByCategoryDTO> summaryDTOs = productRepository.findAllSupllierProductWithSkuByCategory(categoryId);
+        List<ProductWithSkuByCategoryDTO> summaryDTOs = productRepository
+                .findAllSupllierProductWithSkuByCategory(categoryId);
 
         return ResponseDTO.<List<ProductWithSkuByCategoryDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message("取得に成功しました")
                 .data(summaryDTOs)
+                .build();
+    }
+
+    @Override
+    public ResponseDTO<List<InventoryStockDTO>> getAllProductsWithInventoryOptional() {
+
+        List<InventoryStock> result = new ArrayList<>();
+        List<Product> products = productRepository.findAllProductsWithInventoryOptional();
+        for (Product product : products) {
+            List<InventoryStock> stocks = product.getInventoryStocks();
+            if (stocks.isEmpty()) {
+                InventoryStock fakeInventoryStock = new InventoryStock();
+                fakeInventoryStock.setProduct(product);
+                fakeInventoryStock.setQuantity(0);
+                fakeInventoryStock.setVirtual(true);
+                result.add(fakeInventoryStock);
+            } else
+                result.addAll(stocks);
+        }
+        List<InventoryStockDTO> inventoryStockDTOs = result.stream()
+                .map(stock -> {
+                    InventoryStockDTO inventoryStockDTO = inventoryStockMapper.toDTO(stock);
+                    inventoryStockDTO.setProduct(productMapper.toDTO(stock.getProduct()));
+                    inventoryStockDTO.setSupplierProduct(supplierProductMapper.toDTO(stock.getSupplierProduct()));
+                    return inventoryStockDTO;
+                })
+                .collect(Collectors.toList());
+        return ResponseDTO.<List<InventoryStockDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("取得に成功しました")
+                .data(inventoryStockDTOs)
                 .build();
     }
 

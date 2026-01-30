@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.transaction.WeeklyMonthlySalesDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
 import com.example.ReservationApp.service.transaction.SalesOrderDetailService;
 
@@ -23,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/transactions/sales-order")
 @RequiredArgsConstructor
 public class SalesOrderDetailController {
-    
+
     private final SalesOrderDetailService salesOrderDetailService;
 
     @PostMapping("/{soId}")
@@ -48,5 +49,11 @@ public class SalesOrderDetailController {
     public ResponseEntity<ResponseDTO<List<SalesOrderDetailDTO>>> getByPurchaseOrderId(
             @PathVariable Long soId) {
         return ResponseEntity.ok(salesOrderDetailService.getBySalesOrderId(soId));
+    }
+
+    @GetMapping("/{productId}/weekly-sales")
+    public ResponseEntity<ResponseDTO<List<WeeklyMonthlySalesDTO>>> getWeeklySalesByProduct(
+            @PathVariable Long productId) {
+        return ResponseEntity.ok(salesOrderDetailService.getWeeklySalesByProduct(productId));
     }
 }

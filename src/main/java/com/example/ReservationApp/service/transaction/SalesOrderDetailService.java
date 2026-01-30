@@ -3,6 +3,7 @@ package com.example.ReservationApp.service.transaction;
 import java.util.List;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.response.transaction.WeeklyMonthlySalesDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
 
@@ -19,4 +20,6 @@ public interface SalesOrderDetailService {
     List<SalesOrderDetailDTO> getDetailEntitysByOrder(Long salesOrderId);
 
     List<SalesOrderDetailDTO> getAllDetailEntitys(List<SalesOrderDTO> salesOrderDTOs);
+
+    ResponseDTO<List<WeeklyMonthlySalesDTO>> getWeeklySalesByProduct(Long productId);
 }
