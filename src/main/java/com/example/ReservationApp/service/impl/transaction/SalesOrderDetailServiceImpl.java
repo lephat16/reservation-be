@@ -12,7 +12,6 @@ import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.transaction.WeeklyMonthlySalesDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
-import com.example.ReservationApp.entity.product.Product;
 import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;

@@ -9,7 +9,11 @@ public interface SupplierProductStockFlatDTO {
 
     String getProductName();
 
+    String getStatus();
+
     String getCategoryName();
+
+    Long getCategoryId();
 
     String getSupplierName();
 

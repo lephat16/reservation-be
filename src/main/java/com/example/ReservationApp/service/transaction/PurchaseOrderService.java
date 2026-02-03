@@ -22,4 +22,6 @@ public interface PurchaseOrderService {
     ResponseDTO<Void> deletePurchaseOrder(Long purchaseOrderId);
 
     ResponseDTO<PurchaseOrderDTO> placeOrder(Long purchaseOrderId);
+
+    ResponseDTO<List<PurchaseOrderDTO>> getPurchaseOrderBySupplier(Long supplierId);
 }

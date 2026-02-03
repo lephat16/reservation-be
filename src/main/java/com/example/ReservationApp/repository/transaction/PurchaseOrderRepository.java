@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 
+
 public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long> {
     @Query("SELECT po FROM PurchaseOrder po JOIN FETCH po.createdBy JOIN FETCH po.supplier")
     List<PurchaseOrder> findAllWithUserAndSupplier();
@@ -33,6 +34,6 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     Optional<PurchaseOrder> findByIdWithDetails(@Param("id") Long id);
 
     
-    
+    List<PurchaseOrder> findBySupplierId(Long supplierId);
 
 }

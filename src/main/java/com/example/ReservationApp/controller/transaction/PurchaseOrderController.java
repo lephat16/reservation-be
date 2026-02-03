@@ -37,6 +37,11 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
     }
 
+    @GetMapping("/purchase/by-supplier/{supplierId}")
+    ResponseEntity<ResponseDTO<List<PurchaseOrderDTO>>> getPurchaseOrderBySupplier(@PathVariable Long supplierId) {
+        return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderBySupplier(supplierId));
+    }
+
     @GetMapping("/purchase/{poId}")
     ResponseEntity<ResponseDTO<PurchaseOrderDTO>> getPurchaseOrderDetailsByPOIdWithSku(@PathVariable Long poId) {
         return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderDetailsByPOIdWithSku(poId));
@@ -53,7 +58,8 @@ public class PurchaseOrderController {
     ResponseEntity<ResponseDTO<PurchaseOrderDTO>> updatePurchaseOrderQuantityAndDescription(
             @PathVariable Long poId,
             @Valid @RequestBody PurchaseOrderDTO purchaseOrderDTO) {
-        return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrderQuantityAndDescription(poId, purchaseOrderDTO));
+        return ResponseEntity
+                .ok(purchaseOrderService.updatePurchaseOrderQuantityAndDescription(poId, purchaseOrderDTO));
     }
 
     @DeleteMapping("/purchase/delete/{poId}")

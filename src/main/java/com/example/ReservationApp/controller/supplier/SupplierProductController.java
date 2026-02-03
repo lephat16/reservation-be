@@ -45,6 +45,13 @@ public class SupplierProductController {
                                 .ok(supplierProductService.getProductsBySupplier(supplierId));
         }
 
+        @GetMapping("/{sku}/with-price-history")
+        public ResponseEntity<ResponseDTO<SupplierProductDTO>> getProductsBySkuWithPriceHistory(
+                        @PathVariable String sku) {
+                return ResponseEntity
+                                .ok(supplierProductService.getProductsBySkuWithPriceHistory(sku));
+        }
+
         @PutMapping("/{spId}")
         public ResponseEntity<ResponseDTO<SupplierProductDTO>> updateSupplierProduct(
                         @PathVariable Long spId,
@@ -71,6 +78,7 @@ public class SupplierProductController {
                 return ResponseEntity
                                 .ok(supplierProductService.getSupplierProductsWithStock(supplierId));
         }
+
         @GetMapping("/with-lead-time/{supplierId}")
         public ResponseEntity<ResponseDTO<List<CategoryProductsDTO>>> getSupplierProductsWithLeadTime(
                         @PathVariable Long supplierId) {

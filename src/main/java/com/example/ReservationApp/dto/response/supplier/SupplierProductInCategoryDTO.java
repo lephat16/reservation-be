@@ -16,6 +16,7 @@ public class SupplierProductInCategoryDTO {
     private Long id;
     private String sku;
     private String product;
+    private String status;
     private BigDecimal price;
     private Integer stock;
     private Integer leadTime;

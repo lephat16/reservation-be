@@ -22,7 +22,6 @@ import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
 import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
-import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.service.product.ProductService;
 
 import lombok.RequiredArgsConstructor;

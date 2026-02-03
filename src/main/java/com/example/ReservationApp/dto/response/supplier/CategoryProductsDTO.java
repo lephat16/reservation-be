@@ -14,6 +14,7 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CategoryProductsDTO {
     private String categoryName;
+    private Long categoryId;
     private String supplierName;
     private Long supplierId;
     

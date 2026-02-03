@@ -21,6 +21,7 @@ import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.enums.OrderStatus;
+import com.example.ReservationApp.enums.ProductStatus;
 import com.example.ReservationApp.enums.UserRole;
 import com.example.ReservationApp.exception.InvalidActionException;
 import com.example.ReservationApp.exception.NotFoundException;
@@ -103,6 +104,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 for (PurchaseOrderDetailDTO detailDTO : purchaseOrderDTO.getDetails()) {
                         Product product = productRepository.findById(detailDTO.getProductId())
                                         .orElseThrow(() -> new NotFoundException("この商品は存在していません"));
+                        if (product.getStatus() == ProductStatus.INACTIVE) {
+                                throw new IllegalStateException("この商品は現在購入できません");
+                        }
                         PurchaseOrderDetail existing = detailMap.get(product.getId());
                         if (existing != null) {
                                 if (existing.getCost().compareTo(detailDTO.getCost()) != 0) {
@@ -184,6 +188,35 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                 .status(HttpStatus.OK.value())
                                 .message("注文書が正常に取得されました")
                                 .data(purchaseOrderDTO)
+                                .build();
+        }
+
+        /**
+         * IDを指定して購入注文を取得する。
+         *
+         * @param purchaseOrderId 注文ID
+         * @return 購入注文DTO
+         */
+        @Override
+        public ResponseDTO<List<PurchaseOrderDTO>> getPurchaseOrderBySupplier(Long supplierId) {
+
+                List<PurchaseOrder> purchaseOrders = purchaseOrderRepository.findBySupplierId(supplierId);
+
+                List<PurchaseOrderDTO> purchaseOrderDTOs = purchaseOrders.stream()
+                                .map(po -> {
+                                        // PurchaseOrder の基本情報を DTO にマッピング
+                                        PurchaseOrderDTO poDTO = purchaseOrderMapper.toDTO(po);
+                                        // PurchaseOrder に紐づく Detail List を DTO に変換
+                                        List<PurchaseOrderDetailDTO> detailDTOs = poDetailMapper
+                                                        .toDTOList(po.getDetails());
+                                        poDTO.setDetails(detailDTOs);
+                                        return poDTO;
+                                }).toList();
+
+                return ResponseDTO.<List<PurchaseOrderDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("注文書が正常に取得されました")
+                                .data(purchaseOrderDTOs)
                                 .build();
         }
 

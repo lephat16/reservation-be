@@ -9,7 +9,6 @@ import com.example.ReservationApp.dto.response.product.ProductInfoDTO;
 import com.example.ReservationApp.dto.response.product.ProductInfoDetailDTO;
 import com.example.ReservationApp.dto.response.product.ProductWithSkuByCategoryDTO;
 import com.example.ReservationApp.dto.response.product.SumReceivedGroupByProductDTO;
-import com.example.ReservationApp.entity.inventory.InventoryStock;
 
 public interface ProductService {
 

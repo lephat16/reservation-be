@@ -30,8 +30,10 @@ import com.example.ReservationApp.dto.response.product.SupplierPriceDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.product.Category;
 import com.example.ReservationApp.entity.product.Product;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.enums.ProductStatus;
 import com.example.ReservationApp.enums.StockChangeType;
+import com.example.ReservationApp.enums.SupplierProductStatus;
 import com.example.ReservationApp.exception.AlreadyExistException;
 import com.example.ReservationApp.exception.CannotDeleteException;
 import com.example.ReservationApp.exception.NotFoundException;
@@ -188,6 +190,11 @@ public class ProductServiceImpl implements ProductService {
         }
         if (productDTO.getStatus() != null) {
             existingProduct.setStatus(productDTO.getStatus());
+            if(ProductStatus.INACTIVE.equals(productDTO.getStatus())) {
+                List<SupplierProduct> supplierProducts = supplierProductRepository.findByProductId(id);
+                supplierProducts.forEach(sp -> sp.setStatus(SupplierProductStatus.INACTIVE));
+                supplierProductRepository.saveAll(supplierProducts);
+            }
         }
         if (productDTO.getUnit() != null && !productDTO.getUnit().isBlank()) {
             existingProduct.setUnit(productDTO.getUnit());

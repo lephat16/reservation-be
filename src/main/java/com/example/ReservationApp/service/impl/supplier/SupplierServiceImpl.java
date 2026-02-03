@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.supplier.SupplierDTO;
 import com.example.ReservationApp.entity.supplier.Supplier;
+import com.example.ReservationApp.enums.SupplierProductStatus;
+import com.example.ReservationApp.enums.SupplierStatus;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.SupplierMapper;
 import com.example.ReservationApp.repository.supplier.SupplierRepository;
@@ -114,11 +116,17 @@ public class SupplierServiceImpl implements SupplierService {
         if (supplierDTO.getAddress() != null && !supplierDTO.getAddress().isBlank()) {
             existingSupplier.setAddress(supplierDTO.getAddress());
         }
+        if (supplierDTO.getMail() != null && !supplierDTO.getMail().isBlank()) {
+            existingSupplier.setMail(supplierDTO.getMail());
+        }
         if (supplierDTO.getContactInfo() != null && !supplierDTO.getContactInfo().isBlank()) {
             existingSupplier.setContactInfo(supplierDTO.getContactInfo());
         }
         if (supplierDTO.getSupplierStatus() != null) {
             existingSupplier.setStatus(supplierDTO.getSupplierStatus());
+            if (supplierDTO.getSupplierStatus().equals(SupplierStatus.INACTIVE)) {
+                existingSupplier.getSupplierProducts().forEach(sp -> sp.setStatus(SupplierProductStatus.INACTIVE));
+            }
         }
         Supplier updatedSupplier = supplierRepository.save(existingSupplier);
         return ResponseDTO.<SupplierDTO>builder()
