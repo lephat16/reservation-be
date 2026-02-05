@@ -68,19 +68,18 @@ public class SupplierProductServiceImpl implements SupplierProductService {
          */
         @Override
         @Transactional
-        public ResponseDTO<SupplierProductDTO> createSupplierProduct(Long supplierId, Long productId,
-                        SupplierProductDTO spDTO) {
+        public ResponseDTO<SupplierProductDTO> createSupplierProduct(SupplierProductDTO spDTO, Long supplierId) {
 
                 Supplier supplier = supplierRepository.findById(supplierId)
                                 .orElseThrow(() -> new NotFoundException("仕入先は存在していません"));
 
-                Product product = productRepository.findById(productId)
+                Product product = productRepository.findById(spDTO.getProductId())
                                 .orElseThrow(() -> new NotFoundException("商品は存在していません"));
 
                 String normalizedSku = null;
                 if (spDTO.getSupplierSku() != null && !spDTO.getSupplierSku().isBlank()) {
                         normalizedSku = spDTO.getSupplierSku().toUpperCase();
-                        boolean exists = supplierProductRepository.existsBySupplierIdAndSupplierSku(supplierId,
+                        boolean exists = supplierProductRepository.existsBySupplierIdAndSupplierSku(spDTO.getSupplierId(),
                                         normalizedSku);
                         if (exists) {
                                 throw new AlreadyExistException("このSKUは既に別の商品に使用されています");
@@ -178,14 +177,15 @@ public class SupplierProductServiceImpl implements SupplierProductService {
         public ResponseDTO<SupplierProductDTO> updateSupplierProduct(Long spId, SupplierProductDTO spDTO) {
                 SupplierProduct existingSp = supplierProductRepository.findById(spId)
                                 .orElseThrow(() -> new NotFoundException("この仕入れ商品は存在していません"));
-                if (existingSp.getStatus() == SupplierProductStatus.INACTIVE) {
-                        throw new AlreadyExistException("この仕入れ商品は無効化されているため、更新できません");
+
+                if (spDTO.getStatus() != null) {
+                        existingSp.setStatus(spDTO.getStatus());
                 }
                 if (spDTO.getLeadTime() != null) {
                         existingSp.setLeadTime(spDTO.getLeadTime());
                 }
                 if (spDTO.getCurrentPrice() != null) {
-                        addPriceHistoryIfChanged(existingSp, spDTO.getCurrentPrice());
+                        addPriceHistoryIfChanged(existingSp, spDTO.getCurrentPrice(), spDTO.getNote());
                 }
                 if (spDTO.getSupplierSku() != null && !spDTO.getSupplierSku().isBlank()) {
                         String newSku = spDTO.getSupplierSku().toUpperCase();
@@ -203,6 +203,7 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                                 existingSp.setSupplierSku(newSku);
                         }
                 }
+
                 SupplierProduct updatedSp = supplierProductRepository.save(existingSp);
                 return ResponseDTO.<SupplierProductDTO>builder()
                                 .status(HttpStatus.OK.value())
@@ -256,14 +257,14 @@ public class SupplierProductServiceImpl implements SupplierProductService {
          * @param newPrice 新しい価格
          */
 
-        private void addPriceHistoryIfChanged(SupplierProduct sp, BigDecimal newPrice) {
+        private void addPriceHistoryIfChanged(SupplierProduct sp, BigDecimal newPrice, String note) {
                 if (sp.getCurrentPrice() == null
                                 || sp.getCurrentPrice().compareTo(newPrice) != 0) {
                         SupplierProductPriceHistory history = SupplierProductPriceHistory.builder()
                                         .supplierProduct(sp)
                                         .price(newPrice)
                                         .effectiveDate(LocalDate.now())
-                                        .note("価格が更新されました")
+                                        .note(note != null && !note.isBlank() ? note : "価格が更新されました")
                                         .build();
                         supplierProductPriceHistoryRepository.save(history);
                         sp.setCurrentPrice(newPrice);

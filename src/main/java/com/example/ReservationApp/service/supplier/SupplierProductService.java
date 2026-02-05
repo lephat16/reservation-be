@@ -9,7 +9,7 @@ import com.example.ReservationApp.dto.supplier.SupplierProductPriceHistoryDTO;
 
 public interface SupplierProductService {
 
-    ResponseDTO<SupplierProductDTO> createSupplierProduct(Long supplierId, Long productId, SupplierProductDTO spDTO);
+    ResponseDTO<SupplierProductDTO> createSupplierProduct(SupplierProductDTO spDTO, Long supplierId);
 
     ResponseDTO<List<SupplierProductDTO>> getProductsBySupplier(Long supplierId);
 

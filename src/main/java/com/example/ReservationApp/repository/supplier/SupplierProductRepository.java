@@ -45,7 +45,7 @@ public interface SupplierProductRepository extends JpaRepository<SupplierProduct
 
     @Query(value = """
             SELECT
-                p.id,
+                sp.id,
                 sp.supplier_sku AS sku,
                 p.name AS productName,
                 sp.status AS status,
@@ -62,8 +62,8 @@ public interface SupplierProductRepository extends JpaRepository<SupplierProduct
             JOIN suppliers s ON s.id = sp.supplier_id
             LEFT JOIN inventory_stocks i ON i.product_id = p.id
             WHERE sp.supplier_id = :supplierId
-            GROUP BY p.id, sp.supplier_sku, p.name, sp.current_price, c.name, s.name, s.id, sp.lead_time, sp.status, c.id
-            ORDER BY p.id
+            GROUP BY sp.id, sp.supplier_sku, p.name, sp.current_price, c.name, s.name, s.id, sp.lead_time, sp.status, c.id
+            ORDER BY sp.id
             """, nativeQuery = true)
     List<SupplierProductStockFlatDTO> findSupplierProductsWithStock(@Param("supplierId") Long supplierId);
 

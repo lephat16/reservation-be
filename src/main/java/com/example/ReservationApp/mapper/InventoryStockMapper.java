@@ -26,5 +26,6 @@ public interface InventoryStockMapper {
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "supplierProduct", ignore = true)
     @Mapping(target = "stockHistories", ignore = true)
+    @Mapping(target = "virtual", ignore = true)
     InventoryStock toEntity(InventoryStockDTO dto);
 }

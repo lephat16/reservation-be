@@ -16,6 +16,7 @@ public interface SupplierProductMapper {
     @Mapping(target = "supplierId", source = "supplier.id")
     @Mapping(target = "supplierName", source = "supplier.name")
     @Mapping(target = "priceHistories", ignore = true) 
+    @Mapping(target = "note", ignore = true) 
     SupplierProductDTO toDTO(SupplierProduct supplierProduct);
 
     List<SupplierProductDTO> toDTOList(List<SupplierProduct> supplierProducts);

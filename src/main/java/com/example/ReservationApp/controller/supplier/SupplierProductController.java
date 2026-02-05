@@ -18,6 +18,7 @@ import com.example.ReservationApp.dto.supplier.SupplierProductDTO;
 import com.example.ReservationApp.dto.supplier.SupplierProductPriceHistoryDTO;
 import com.example.ReservationApp.service.supplier.SupplierProductService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -27,14 +28,12 @@ public class SupplierProductController {
 
         private final SupplierProductService supplierProductService;
 
-        @PostMapping("/add")
+        @PostMapping("/{spId}/add")
         public ResponseEntity<ResponseDTO<SupplierProductDTO>> addSupplierProduct(
-                        @RequestBody SupplierProductDTO supplierProductDTO) {
+                        @RequestBody @Valid SupplierProductDTO supplierProductDTO,
+                        @PathVariable Long spId) {
                 return ResponseEntity
-                                .ok(supplierProductService
-                                                .createSupplierProduct(supplierProductDTO.getSupplierId(),
-                                                                supplierProductDTO.getProductId(),
-                                                                supplierProductDTO));
+                                .ok(supplierProductService.createSupplierProduct(supplierProductDTO, spId));
 
         }
 
@@ -55,7 +54,7 @@ public class SupplierProductController {
         @PutMapping("/{spId}")
         public ResponseEntity<ResponseDTO<SupplierProductDTO>> updateSupplierProduct(
                         @PathVariable Long spId,
-                        @RequestBody SupplierProductDTO spDTO) {
+                        @RequestBody @Valid SupplierProductDTO spDTO) {
                 return ResponseEntity
                                 .ok(supplierProductService.updateSupplierProduct(spId, spDTO));
         }

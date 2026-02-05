@@ -19,5 +19,6 @@ public interface ProductMapper {
     List<ProductDTO> toDTOList(List<Product> products);
 
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "inventoryStocks", ignore = true)
     Product toEntity(ProductDTO productDTO);
 }
