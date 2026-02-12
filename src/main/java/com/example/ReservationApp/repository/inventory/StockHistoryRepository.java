@@ -217,38 +217,6 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
                         ORDER BY sh.created_at ASC, sh.id ASC
                                 """, nativeQuery = true)
         List<StockHistoriesWithDetailDTO> findAllStockHistoriesWithDetails();
-        // @Query(value = """
-        //                         SELECT
-        //                                 sh.id,
-        //                                 sh.inventory_stock_id,
-        //                                 sh.change_qty,
-        //                                 sh.type,
-        //                                 sh.ref_type,
-        //                                 sh.ref_id,
-        //                                 sh.notes,
-        //                                 sh.created_at,
-        //                                 sp.supplier_sku,
-        //                                 p.name AS productName,
-        //                                 p.unit,
-        //                                 wh.name AS warehouse_name,
-        //                                 COALESCE(so_user.name, po_user.name) AS user_name,
-        //                                 COALESCE(sod.price, pod.cost) AS price,
-        //                                 COALESCE(s.name, so.customer_name) AS participant_name
-
-        //                         FROM public.stock_histories sh
-        //                         JOIN inventory_stocks ins ON ins.id=sh.inventory_stock_id
-        //                         JOIN supplier_products sp ON sp.id=ins.supplier_product_id
-        //                         JOIN products p ON p.id=sp.product_id
-        //                         JOIN warehouses wh ON ins.warehouse_id=wh.id
-        //                         LEFT JOIN sales_orders so ON sh.ref_id=so.id
-        //                         LEFT JOIN users so_user ON so_user.id=so.user_id
-        //                         LEFT JOIN sales_order_details sod ON sod.sales_order_id=so.id
-        //                         LEFT JOIN purchase_orders po ON sh.ref_id=po.id
-        //                         LEFT JOIN users po_user ON po_user.id=po.user_id
-        //                         LEFT JOIN purchase_order_details pod ON pod.purchase_order_id=po.id AND ins.product_id=pod.product_id
-        //                         LEFT JOIN suppliers s ON po.supplier_id=s.id
-        //                         ORDER BY id ASC
-        //                             """, nativeQuery = true)
-        // List<StockHistoriesWithDetailDTO> findAllStockHistoriesWithDetails();
+        
 
 }

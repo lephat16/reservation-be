@@ -2,6 +2,7 @@ package com.example.ReservationApp.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -25,7 +26,7 @@ public class JwtUtils {
 
     /** JWTトークンの有効期限（ミリ秒単位） */
     private static final long EXPIRATION_TIME_IN_MILLISEC = 1000L * 60L * 60L;
-    // private static final long EXPIRATION_TIME_IN_MILLISEC = 1000L *5L;
+    // private static final long EXPIRATION_TIME_IN_MILLISEC = 1000L * 5L;
     private static final long REFRESH_EXPIRATION_TIME = 1000L * 60L * 60L * 24L * 7L;
 
     private final StringRedisTemplate redisTemplate;
@@ -74,8 +75,8 @@ public class JwtUtils {
                 .signWith(key)
                 .compact();
         redisTemplate.opsForValue().set(
-                "refresh_token:" + email,  //overwrite data, 
-                refreshToken,
+                "refresh_token:" + email, // overwrite data,
+                Objects.requireNonNull(refreshToken),
                 REFRESH_EXPIRATION_TIME,
                 TimeUnit.MILLISECONDS);
 
@@ -155,7 +156,7 @@ public class JwtUtils {
         }
 
         Date expiration = claims.getExpiration();
-        if (expiration.before(new Date())) {    
+        if (expiration.before(new Date())) {
             throw new RuntimeException("リフレッシュトークンの有効期限が切れています");
         }
 
