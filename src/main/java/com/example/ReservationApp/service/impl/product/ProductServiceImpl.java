@@ -190,7 +190,7 @@ public class ProductServiceImpl implements ProductService {
         }
         if (productDTO.getStatus() != null) {
             existingProduct.setStatus(productDTO.getStatus());
-            if(ProductStatus.INACTIVE.equals(productDTO.getStatus())) {
+            if (ProductStatus.INACTIVE.equals(productDTO.getStatus())) {
                 List<SupplierProduct> supplierProducts = supplierProductRepository.findByProductId(id);
                 supplierProducts.forEach(sp -> sp.setStatus(SupplierProductStatus.INACTIVE));
                 supplierProductRepository.saveAll(supplierProducts);
@@ -291,6 +291,12 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    /**
+     * 指定IDの商品について、取得
+     *
+     * @param productId 商品ID
+     * @return 商品詳細情報（Supplier・Stock含む）
+     */
     @Override
     public ResponseDTO<ProductInfoDTO> getProductWithSupplierAndStockById(Long productId) {
         // DBから取得した「フラット構造」の商品＋仕入先＋在庫データ
@@ -305,6 +311,12 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    /**
+     * 全商品の
+     * 「商品 + 仕入先 + 在庫情報」を一覧取得します。
+     *
+     * @return 商品一覧（Supplier・Stock含む）
+     */
     @Override
     public ResponseDTO<List<ProductInfoDTO>> getAllProductWithSupplierAndStock() {
 
@@ -321,6 +333,13 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    /**
+     * フラット形式（JOIN結果）の商品データ一覧を
+     * 「商品単位」の階層構造DTOに変換するメソッド。
+     * 
+     * @param rows フラット構造の検索結果
+     * @return 商品名をキーとした商品DTO Map
+     */
     private Map<String, ProductInfoDTO> builtProductMap(List<ProductInfoFlatDTO> rows) {
 
         // 商品名をキーにして、同一商品の重複生成を防ぐためのMap
@@ -371,13 +390,31 @@ public class ProductServiceImpl implements ProductService {
         return productMap;
     }
 
+    /**
+     * 指定された商品IDの「詳細情報」を取得する。
+     *
+     * 取得内容：
+     * ・商品基本情報
+     * ・仕入先＋価格一覧
+     * ・在庫履歴
+     * ・倉庫別在庫数
+     *
+     * 複数テーブルのJOIN結果を個別に取得し、
+     * 最終的に ProductInfoDetailDTO としてまとめて返却する。
+     *
+     * @param productId 商品ID
+     * @return 商品詳細DTO
+     */
     @Override
     public ResponseDTO<ProductInfoDetailDTO> getProductInfoDetail(Long productId) {
 
+        // 商品基本情報取得
         List<Object[]> products = productRepository.findProductWithCatName(productId);
         if (products.isEmpty()) {
             throw new NotFoundException("この商品は存在していません");
         }
+
+        // 1件のみ取得想定
         Object[] product = products.get(0);
         ProductDTO productDTO = ProductDTO.builder()
                 .id(((Number) product[0]).longValue())
@@ -390,6 +427,7 @@ public class ProductServiceImpl implements ProductService {
                 .totalStock(0)
                 .build();
 
+        // 仕入先＋価格情報取得
         List<Object[]> suppliers = supplierProductRepository.getSupplierAndPriceByProductId(productId);
         List<SupplierPriceDTO> supplierDTOs = new ArrayList<>();
         for (Object[] r : suppliers) {
@@ -402,6 +440,7 @@ public class ProductServiceImpl implements ProductService {
             supplierDTOs.add(dto);
         }
 
+        // 在庫履歴取得
         List<Object[]> historyList = stockHistoryRepository
                 .findHistoryWithQuantiyAndTypeByProductId(productId);
         List<StockHistoryDTO> stockHistoryDTOs = new ArrayList<>();
@@ -413,6 +452,8 @@ public class ProductServiceImpl implements ProductService {
                     .build();
             stockHistoryDTOs.add(dto);
         }
+
+        // 倉庫別在庫取得
         List<Object[]> stocks = inventoryStockRepository
                 .findStockWithWarehouseAndQtyByProductId(productId);
         List<InventoryStockDTO> stockDTOs = new ArrayList<>();
@@ -424,6 +465,7 @@ public class ProductServiceImpl implements ProductService {
             stockDTOs.add(dto);
         }
 
+        // 総在庫数計算
         productDTO.setTotalStock(stockDTOs.stream()
                 .mapToInt(InventoryStockDTO::getQuantity)
                 .sum());
@@ -440,6 +482,23 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    /**
+     * 指定された発注書IDに紐づく「商品別受領数量の合計」を取得する。
+     *
+     * 処理内容：
+     * ・発注書の存在チェック
+     * ・在庫履歴テーブルから
+     * 商品ごとに受領数量（receivedQty）をSUM集計
+     * ・DTOに変換して返却
+     *
+     * 使用用途：
+     * ・入荷実績画面
+     * ・発注進捗確認
+     * ・商品別入荷数量レポート
+     *
+     * @param poId 発注書ID
+     * @return 商品別受領数量リスト
+     */
     public ResponseDTO<List<SumReceivedGroupByProductDTO>> getSumReceivedQtyByPoGroupByProduct(Long poId) {
 
         if (!poRepository.existsById(poId)) {
@@ -467,6 +526,23 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    /**
+     * 指定されたカテゴリIDに紐づく
+     * 「仕入先付き商品（SKU情報含む）」一覧を取得する。
+     *
+     * 処理内容：
+     * ・カテゴリの存在チェック
+     * ・商品＋仕入先＋SKU情報をRepositoryから取得
+     * ・そのままDTOとして返却
+     *
+     * 使用用途：
+     * ・商品マスタ画面
+     * ・仕入先別SKU管理
+     * ・カテゴリ別商品一覧表示
+     *
+     * @param categoryId カテゴリID
+     * @return 商品＋仕入先SKU一覧
+     */
     @Override
     public ResponseDTO<List<ProductWithSkuByCategoryDTO>> getAllSupllierProductWithSkuByCategory(Long categoryId) {
         if (!categoryRepository.existsById(categoryId)) {
@@ -483,6 +559,24 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    /**
+     * 全商品に対して在庫情報を取得する。
+     *
+     * 特徴：
+     * ・在庫が存在する → そのまま返却
+     * ・在庫が存在しない → quantity=0 の仮想在庫を生成
+     *
+     * 目的：
+     * ・在庫ゼロ商品も一覧に表示させるため
+     * ・フロント側のnullチェックを不要にする
+     *
+     * 使用用途：
+     * ・在庫一覧画面
+     * ・棚卸画面
+     * ・在庫レポート
+     *
+     * @return 商品＋在庫DTO一覧
+     */
     @Override
     public ResponseDTO<List<InventoryStockDTO>> getAllProductsWithInventoryOptional() {
 

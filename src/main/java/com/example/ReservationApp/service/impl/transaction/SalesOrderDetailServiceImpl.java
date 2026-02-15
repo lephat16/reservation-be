@@ -186,6 +186,13 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                                 .build();
         }
 
+        /**
+         * 指定された販売明細を削除
+         *
+         * @param detailId 削除対象の販売明細ID
+         * @return 削除結果を示すResponseDTO（Void）
+         * @throws NotFoundException 指定された販売明細が存在しない場合
+         */
         @Override
         public ResponseDTO<Void> deleteDetail(Long detailId) {
                 SalesOrderDetail soDetail = soDetailRepository.findById(detailId)
@@ -201,6 +208,13 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                                 .build();
         }
 
+        /**
+         * 指定されたSalesOrder IDに関連する販売明細のDTOリストを取得
+         * 
+         * @param salesOrderId 取得対象の注文書ID
+         * @return SalesOrderDetailDTOのリストを含むResponseDTO
+         * @throws NotFoundException 指定された注文書が存在しない場合
+         */
         @Override
         public ResponseDTO<List<SalesOrderDetailDTO>> getBySalesOrderId(Long salesOrderId) {
 
@@ -215,6 +229,13 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                                 .build();
         }
 
+        /**
+         * Entityから販売明細DTOリストを取得
+         *
+         * @param salesOrderId 取得対象の注文書ID
+         * @return SalesOrderDetailDTOのリスト
+         * @throws NotFoundException 指定された注文書が存在しない場合
+         */
         @Override
         public List<SalesOrderDetailDTO> getDetailEntitysByOrder(Long salesOrderId) {
 
@@ -224,6 +245,12 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                 return soDetailMapper.toDTOList(soDetails);
         }
 
+        /**
+         * 複数のSalesOrder DTOから全ての販売明細DTOを取得
+         *
+         * @param salesOrderDTOs 対象となるSalesOrder DTOリスト
+         * @return SalesOrderDetailDTOのリスト（対象が空の場合は空リストを返す）
+         */
         @Override
         public List<SalesOrderDetailDTO> getAllDetailEntitys(List<SalesOrderDTO> salesOrderDTOs) {
                 if (salesOrderDTOs == null || salesOrderDTOs.isEmpty()) {
@@ -240,6 +267,8 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
         /**
          * SalesOrderの合計金額更新
          * 書き込みメソッドから呼ばれる
+         * 
+         * @param so 合計金額を更新するSalesOrder
          */
         private void updateTotal(SalesOrder so) {
                 BigDecimal total = so.getDetails().stream()
@@ -249,6 +278,13 @@ public class SalesOrderDetailServiceImpl implements SalesOrderDetailService {
                 // soRepository.save(so);
         }
 
+        /**
+         * 指定された商品IDに基づき、週間ごとの販売実績を取得
+         *
+         * @param productId 取得対象の商品ID
+         * @return 週間販売実績を含むWeeklyMonthlySalesDTOのリストを返すResponseDTO
+         * @throws NotFoundException 指定された商品が存在しない場合
+         */
         @Override
         public ResponseDTO<List<WeeklyMonthlySalesDTO>> getWeeklySalesByProduct(Long productId) {
                 if (!productRepository.existsById(productId)) {

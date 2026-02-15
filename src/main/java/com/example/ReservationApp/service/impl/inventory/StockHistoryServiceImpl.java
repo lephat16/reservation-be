@@ -34,240 +34,264 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StockHistoryServiceImpl implements StockHistoryService {
 
-    private final StockHistoryRepository stockHistoryRepository;
-    private final InventoryStockRepository inventoryStockRepository;
-    private final StockHistoryMapper stockHistoryMapper;
-    private final WarehouseRepository warehouseRepository;
-    private final ProductRepository productRepository;
-    private final SalesOrderRepository salesOrderRepository;
+        private final StockHistoryRepository stockHistoryRepository;
+        private final InventoryStockRepository inventoryStockRepository;
+        private final StockHistoryMapper stockHistoryMapper;
+        private final WarehouseRepository warehouseRepository;
+        private final ProductRepository productRepository;
+        private final SalesOrderRepository salesOrderRepository;
 
-    /**
-     * 在庫履歴を作成します。数量の増減を反映します。
-     *
-     * @param stockHistoryDTO  在庫履歴情報
-     * @param inventoryStockId 対象の在庫ID
-     * @return 作成された在庫履歴DTO
-     */
-    @Override
-    @Transactional
-    public ResponseDTO<StockHistoryDTO> createStockHistory(
-            StockHistoryDTO stockHistoryDTO,
-            @RequestParam Long inventoryStockId) {
+        /**
+         * 在庫履歴を作成します。数量の増減を反映します。
+         *
+         * @param stockHistoryDTO  在庫履歴情報
+         * @param inventoryStockId 対象の在庫ID
+         * @return 作成された在庫履歴DTO
+         */
+        @Override
+        @Transactional
+        public ResponseDTO<StockHistoryDTO> createStockHistory(
+                        StockHistoryDTO stockHistoryDTO,
+                        @RequestParam Long inventoryStockId) {
 
-        // 変更数量が null または 0 の場合は例外
-        if (stockHistoryDTO.getChangeQty() == null || stockHistoryDTO.getChangeQty() == 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "数量の変更は0にできません");
+                // 変更数量が null または 0 の場合は例外
+                if (stockHistoryDTO.getChangeQty() == null || stockHistoryDTO.getChangeQty() == 0) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "数量の変更は0にできません");
+                }
+
+                // 対象の在庫データを取得。存在しなければ例外
+                InventoryStock inventoryStock = inventoryStockRepository.findById(inventoryStockId)
+                                .orElseThrow(() -> new NotFoundException("在庫データが存在していません"));
+
+                int newQty = inventoryStock.getQuantity() + stockHistoryDTO.getChangeQty();
+                if (newQty < 0) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "在庫が不足しています");
+                }
+
+                // StockHistory エンティティに変換し、在庫と紐付けて保存
+                StockHistory stockHistory = stockHistoryMapper.toEntity(stockHistoryDTO);
+                stockHistory.setInventoryStock(inventoryStock);
+                stockHistoryRepository.save(stockHistory);
+
+                // InventoryStock の数量を更新
+                inventoryStock.setQuantity(newQty);
+                inventoryStockRepository.save(inventoryStock);
+
+                return ResponseDTO.<StockHistoryDTO>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("新しい商品の追加に成功しました")
+                                .data(stockHistoryMapper.toDTO(stockHistory))
+                                .build();
         }
 
-        // 対象の在庫データを取得。存在しなければ例外
-        InventoryStock inventoryStock = inventoryStockRepository.findById(inventoryStockId)
-                .orElseThrow(() -> new NotFoundException("在庫データが存在していません"));
+        /**
+         * 全在庫履歴を取得します。
+         *
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<StockHistoryDTO>> getAllStockHistories() {
 
-        int newQty = inventoryStock.getQuantity() + stockHistoryDTO.getChangeQty();
-        if (newQty < 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "在庫が不足しています");
+                // 全在庫履歴を取得（在庫・商品・倉庫情報も取得）
+                List<StockHistory> stockHistories = stockHistoryRepository.findAllWithStockProductWarehouse();
+                List<StockHistoryDTO> stockHistoryDTOs = stockHistoryMapper.toDTOList(stockHistories);
+
+                // DTOに変換して返す
+                return ResponseDTO.<List<StockHistoryDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("在庫履歴の取得に成功しました")
+                                .data(stockHistoryDTOs)
+                                .build();
         }
 
-        // StockHistory エンティティに変換し、在庫と紐付けて保存
-        StockHistory stockHistory = stockHistoryMapper.toEntity(stockHistoryDTO);
-        stockHistory.setInventoryStock(inventoryStock);
-        stockHistoryRepository.save(stockHistory);
+        @Override
+        public ResponseDTO<List<StockHistoriesWithDetailDTO>> getAllStockHistoriesWithDetails() {
 
-        // InventoryStock の数量を更新
-        inventoryStock.setQuantity(newQty);
-        inventoryStockRepository.save(inventoryStock);
+                // 全在庫履歴を取得（在庫・商品・倉庫情報も取得）
+                List<StockHistoriesWithDetailDTO> stockHistoryDTOs = stockHistoryRepository
+                                .findAllStockHistoriesWithDetails();
 
-        return ResponseDTO.<StockHistoryDTO>builder()
-                .status(HttpStatus.OK.value())
-                .message("新しい商品の追加に成功しました")
-                .data(stockHistoryMapper.toDTO(stockHistory))
-                .build();
-    }
-
-    /**
-     * 全在庫履歴を取得します。
-     *
-     * @return 在庫履歴DTOのリスト
-     */
-    @Override
-    public ResponseDTO<List<StockHistoryDTO>> getAllStockHistories() {
-
-        // 全在庫履歴を取得（在庫・商品・倉庫情報も取得）
-        List<StockHistory> stockHistories = stockHistoryRepository.findAllWithStockProductWarehouse();
-        List<StockHistoryDTO> stockHistoryDTOs = stockHistoryMapper.toDTOList(stockHistories);
-
-        // DTOに変換して返す
-        return ResponseDTO.<List<StockHistoryDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("在庫履歴の取得に成功しました")
-                .data(stockHistoryDTOs)
-                .build();
-    }
-
-    @Override
-    public ResponseDTO<List<StockHistoriesWithDetailDTO>> getAllStockHistoriesWithDetails() {
-
-        // 全在庫履歴を取得（在庫・商品・倉庫情報も取得）
-        List<StockHistoriesWithDetailDTO> stockHistoryDTOs = stockHistoryRepository.findAllStockHistoriesWithDetails();
-        
-        // DTOに変換して返す
-        return ResponseDTO.<List<StockHistoriesWithDetailDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("在庫履歴の取得に成功しました")
-                .data(stockHistoryDTOs)
-                .build();
-    }
-
-    /**
-     * 指定の在庫IDに紐づく履歴を取得します。
-     *
-     * @param inventoryStockId 在庫ID
-     * @return 在庫履歴DTOのリスト
-     */
-    @Override
-    public ResponseDTO<List<StockHistoryDTO>> getStockHistoryByInventoryId(Long inventoryStockIdLong) {
-
-        // 指定在庫IDに紐づく履歴を取得
-        List<StockHistory> stockHistories = stockHistoryRepository.findByInventoryStock(inventoryStockIdLong);
-
-        // DTOに変換して返す
-        return ResponseDTO.<List<StockHistoryDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("指定在庫の履歴取得に成功しました")
-                .data(stockHistoryMapper.toDTOList(stockHistories))
-                .build();
-
-    }
-
-    /**
-     * 指定倉庫の在庫履歴を取得します。
-     *
-     * @param warehouseId 倉庫ID
-     * @return 在庫履歴DTOのリスト
-     */
-    @Override
-    public ResponseDTO<List<StockHistoryDTO>> getStockHistoryByWarehouse(Long warehouseId) {
-
-        // 倉庫存在チェック
-        if (!warehouseRepository.existsById(warehouseId)) {
-            throw new NotFoundException("この倉庫は存在していません");
+                // DTOに変換して返す
+                return ResponseDTO.<List<StockHistoriesWithDetailDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("在庫履歴の取得に成功しました")
+                                .data(stockHistoryDTOs)
+                                .build();
         }
 
-        // 指定倉庫に紐づく履歴を取得
-        List<StockHistory> stockHistories = stockHistoryRepository.findByWarehouse(warehouseId);
+        /**
+         * 指定の在庫IDに紐づく履歴を取得します。
+         *
+         * @param inventoryStockId 在庫ID
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<StockHistoryDTO>> getStockHistoryByInventoryId(Long inventoryStockIdLong) {
 
-        return ResponseDTO.<List<StockHistoryDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("指定倉庫の履歴取得に成功しました")
-                .data(stockHistoryMapper.toDTOList(stockHistories))
-                .build();
-    }
+                // 指定在庫IDに紐づく履歴を取得
+                List<StockHistory> stockHistories = stockHistoryRepository.findByInventoryStock(inventoryStockIdLong);
 
-    /**
-     * 指定商品に紐づく在庫履歴を取得します。
-     *
-     * @param productId 商品ID
-     * @return 在庫履歴DTOのリスト
-     */
-    @Override
-    public ResponseDTO<List<StockHistoryDTO>> getStockHistoryByProduct(Long productId) {
+                // DTOに変換して返す
+                return ResponseDTO.<List<StockHistoryDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("指定在庫の履歴取得に成功しました")
+                                .data(stockHistoryMapper.toDTOList(stockHistories))
+                                .build();
 
-        // 商品存在チェック
-        if (!productRepository.existsById(productId)) {
-            throw new NotFoundException("この商品は存在していません");
         }
 
-        // 指定商品に紐づく履歴を取得
-        List<StockHistory> stockHistories = stockHistoryRepository.findByProduct(productId);
+        /**
+         * 指定倉庫の在庫履歴を取得します。
+         *
+         * @param warehouseId 倉庫ID
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<StockHistoryDTO>> getStockHistoryByWarehouse(Long warehouseId) {
 
-        return ResponseDTO.<List<StockHistoryDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("指定商品の履歴取得に成功しました")
-                .data(stockHistoryMapper.toDTOList(stockHistories))
-                .build();
-    }
+                // 倉庫存在チェック
+                if (!warehouseRepository.existsById(warehouseId)) {
+                        throw new NotFoundException("この倉庫は存在していません");
+                }
 
-    /**
-     * 指定日以降の最近の在庫履歴を取得します。
-     *
-     * @param fromDate 開始日
-     * @return 在庫履歴DTOのリスト
-     */
-    @Override
-    public ResponseDTO<List<StockHistoryDTO>> getRecentStockHistory(LocalDateTime fromDate) {
+                // 指定倉庫に紐づく履歴を取得
+                List<StockHistory> stockHistories = stockHistoryRepository.findByWarehouse(warehouseId);
 
-        // 日付が null の場合は5日前を初期値とする
-        if (fromDate == null) {
-            fromDate = LocalDateTime.now().minusDays(5);
+                return ResponseDTO.<List<StockHistoryDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("指定倉庫の履歴取得に成功しました")
+                                .data(stockHistoryMapper.toDTOList(stockHistories))
+                                .build();
         }
 
-        // 指定日以降の履歴を取得
-        List<StockHistory> stockHistories = stockHistoryRepository.findRecentStockHistory(fromDate);
+        /**
+         * 指定商品に紐づく在庫履歴を取得します。
+         *
+         * @param productId 商品ID
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<StockHistoryDTO>> getStockHistoryByProduct(Long productId) {
 
-        return ResponseDTO.<List<StockHistoryDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("最近の在庫履歴取得に成功しました")
-                .data(stockHistoryMapper.toDTOList(stockHistories))
-                .build();
-    }
+                // 商品存在チェック
+                if (!productRepository.existsById(productId)) {
+                        throw new NotFoundException("この商品は存在していません");
+                }
 
-    @Override
-    public ResponseDTO<List<InventoryHistoryByOrderDTO>> getInventoryHistoryByPurchaseOrder(Long poId) {
+                // 指定商品に紐づく履歴を取得
+                List<StockHistory> stockHistories = stockHistoryRepository.findByProduct(productId);
 
-        List<InventoryHistoryByPurchaseOrderFlatDTO> inventoryHistoryByPurchaseOrderFlatDTOs = stockHistoryRepository
-                .findInventoryHistoryByPurchaseOrder(poId);
-
-        List<InventoryHistoryByOrderDTO> InventoryHistoryByOrderDTOs = inventoryHistoryByPurchaseOrderFlatDTOs
-                .stream()
-                .map(flatDTO -> InventoryHistoryByOrderDTO.builder()
-                        .id(flatDTO.getId())
-                        .location(flatDTO.getLocation())
-                        .warehouseName(flatDTO.getWarehouseName())
-                        .changeQty(flatDTO.getChangeQty())
-                        .notes(flatDTO.getNotes())
-                        .productName(flatDTO.getProductName())
-                        .supplierName(flatDTO.getSupplierName())
-                        .refType(flatDTO.getRefType())
-                        .createdAt(flatDTO.getCreatedAt())
-                        .supplierSku(flatDTO.getSupplierSku())
-                        .build())
-                .collect(Collectors.toList());
-        return ResponseDTO.<List<InventoryHistoryByOrderDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("在庫履歴取得に成功しました")
-                .data(InventoryHistoryByOrderDTOs)
-                .build();
-    }
-    
-    @Override
-    public ResponseDTO<List<InventoryHistoryByOrderDTO>> getInventoryHistoryBySaleOrder(Long soId) {
-        if (!salesOrderRepository.existsById(soId)) {
-            throw new NotFoundException("この販売注文書は存在していません");
+                return ResponseDTO.<List<StockHistoryDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("指定商品の履歴取得に成功しました")
+                                .data(stockHistoryMapper.toDTOList(stockHistories))
+                                .build();
         }
-        List<InventoryHistoryBySaleOrderFlatDTO> inventoryHistoryBySaleOrderFlatDTOs = stockHistoryRepository
-                .findInventoryHistoryBySaleOrder(soId);
 
-        List<InventoryHistoryByOrderDTO> InventoryHistoryByOrderDTOs = inventoryHistoryBySaleOrderFlatDTOs
-                .stream()
-                .map(flatDTO -> InventoryHistoryByOrderDTO.builder()
-                        .id(flatDTO.getId())
-                        .location(flatDTO.getLocation())
-                        .warehouseName(flatDTO.getWarehouseName())
-                        .changeQty(flatDTO.getChangeQty())
-                        .notes(flatDTO.getNotes())
-                        .productName(flatDTO.getProductName())
-                        .customerName(flatDTO.getCustomerName())
-                        .refType(flatDTO.getRefType())
-                        .createdAt(flatDTO.getCreatedAt())
-                        .supplierSku(flatDTO.getSupplierSku())
-                        .inventoryStockId(flatDTO.getInventoryStockId())
-                        .build())
-                .collect(Collectors.toList());
-        return ResponseDTO.<List<InventoryHistoryByOrderDTO>>builder()
-                .status(HttpStatus.OK.value())
-                .message("在庫履歴取得に成功しました")
-                .data(InventoryHistoryByOrderDTOs)
-                .build();
-    }
+        /**
+         * 指定日以降の最近の在庫履歴を取得します。
+         *
+         * @param fromDate 開始日
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<StockHistoryDTO>> getRecentStockHistory(LocalDateTime fromDate) {
+
+                // 日付が null の場合は5日前を初期値とする
+                if (fromDate == null) {
+                        fromDate = LocalDateTime.now().minusDays(5);
+                }
+
+                // 指定日以降の履歴を取得
+                List<StockHistory> stockHistories = stockHistoryRepository.findRecentStockHistory(fromDate);
+
+                return ResponseDTO.<List<StockHistoryDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("最近の在庫履歴取得に成功しました")
+                                .data(stockHistoryMapper.toDTOList(stockHistories))
+                                .build();
+        }
+
+        /**
+         * 指定した仕入注文（Purchase Order）に紐づく在庫履歴を取得する処理
+         *
+         * 仕入注文IDをもとに在庫変動履歴を検索し、
+         * FlatDTO（JOIN結果）を InventoryHistoryByOrderDTO にマッピングして返却する。
+         *
+         * 主に「仕入入庫履歴」や「PO単位の在庫追跡画面」で使用される。
+         *
+         * @param poId 仕入注文ID
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<InventoryHistoryByOrderDTO>> getInventoryHistoryByPurchaseOrder(Long poId) {
+
+                List<InventoryHistoryByPurchaseOrderFlatDTO> inventoryHistoryByPurchaseOrderFlatDTOs = stockHistoryRepository
+                                .findInventoryHistoryByPurchaseOrder(poId);
+
+                List<InventoryHistoryByOrderDTO> InventoryHistoryByOrderDTOs = inventoryHistoryByPurchaseOrderFlatDTOs
+                                .stream()
+                                .map(flatDTO -> InventoryHistoryByOrderDTO.builder()
+                                                .id(flatDTO.getId())
+                                                .location(flatDTO.getLocation())
+                                                .warehouseName(flatDTO.getWarehouseName())
+                                                .changeQty(flatDTO.getChangeQty())
+                                                .notes(flatDTO.getNotes())
+                                                .productName(flatDTO.getProductName())
+                                                .supplierName(flatDTO.getSupplierName())
+                                                .refType(flatDTO.getRefType())
+                                                .createdAt(flatDTO.getCreatedAt())
+                                                .supplierSku(flatDTO.getSupplierSku())
+                                                .build())
+                                .collect(Collectors.toList());
+                return ResponseDTO.<List<InventoryHistoryByOrderDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("在庫履歴取得に成功しました")
+                                .data(InventoryHistoryByOrderDTOs)
+                                .build();
+        }
+
+        /**
+         * 指定した販売注文（Sale Order）に紐づく在庫履歴を取得する処理
+         *
+         * 対象の販売注文が存在しない場合は NotFoundException をスローする。
+         * 存在する場合は、在庫変動履歴を検索し、
+         * FlatDTO を InventoryHistoryByOrderDTO に変換して返却する。
+         *
+         * 主に出庫履歴や販売注文単位の在庫トラッキング画面で使用される。
+         *
+         * @param soId 販売注文ID
+         * @return 在庫履歴DTOのリスト
+         */
+        @Override
+        public ResponseDTO<List<InventoryHistoryByOrderDTO>> getInventoryHistoryBySaleOrder(Long soId) {
+                if (!salesOrderRepository.existsById(soId)) {
+                        throw new NotFoundException("この販売注文書は存在していません");
+                }
+                List<InventoryHistoryBySaleOrderFlatDTO> inventoryHistoryBySaleOrderFlatDTOs = stockHistoryRepository
+                                .findInventoryHistoryBySaleOrder(soId);
+
+                List<InventoryHistoryByOrderDTO> InventoryHistoryByOrderDTOs = inventoryHistoryBySaleOrderFlatDTOs
+                                .stream()
+                                .map(flatDTO -> InventoryHistoryByOrderDTO.builder()
+                                                .id(flatDTO.getId())
+                                                .location(flatDTO.getLocation())
+                                                .warehouseName(flatDTO.getWarehouseName())
+                                                .changeQty(flatDTO.getChangeQty())
+                                                .notes(flatDTO.getNotes())
+                                                .productName(flatDTO.getProductName())
+                                                .customerName(flatDTO.getCustomerName())
+                                                .refType(flatDTO.getRefType())
+                                                .createdAt(flatDTO.getCreatedAt())
+                                                .supplierSku(flatDTO.getSupplierSku())
+                                                .inventoryStockId(flatDTO.getInventoryStockId())
+                                                .build())
+                                .collect(Collectors.toList());
+                return ResponseDTO.<List<InventoryHistoryByOrderDTO>>builder()
+                                .status(HttpStatus.OK.value())
+                                .message("在庫履歴取得に成功しました")
+                                .data(InventoryHistoryByOrderDTOs)
+                                .build();
+        }
 
 }

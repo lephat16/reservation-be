@@ -19,12 +19,6 @@ import lombok.Data;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseDTO<T> {
 
-    // Token info
-    // private String token;
-    // private String refreshToken;
-    // private UserRole role;
-    // private String expirationTime;
-
     // Status info
     private int status;
     private String message;

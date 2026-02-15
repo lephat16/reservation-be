@@ -35,6 +35,7 @@ public class StockHistoriesWithDetailDTO {
 
     private String supplierSku;
     private String productName;
+    private String code;
     private String unit;
     private String warehouseName;
     private String userName;

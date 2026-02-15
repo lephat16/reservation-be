@@ -251,6 +251,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                 .build();
         }
 
+        /**
+         * 指定された購入注文の数量および説明を更新します。
+         *
+         * @param poId             対象の購入注文ID
+         * @param purchaseOrderDTO 更新内容を含むPurchaseOrderDTO
+         * @return 更新後のPurchaseOrderDTOを含むResponseDTO
+         * @throws NotFoundException     指定された注文書が存在しない場合
+         * @throws IllegalStateException NEW以外の注文書を更新しようとした場合、またはPOに存在しない商品を更新しようとした場合
+         */
         @Override
         @Transactional
         public ResponseDTO<PurchaseOrderDTO> updatePurchaseOrderQuantityAndDescription(Long poId,
@@ -327,6 +336,13 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
+        /**
+         * 指定された購入注文IDに基づき、SKU情報付きの注文明細を取得します。
+         *
+         * @param purchaseOrderId 取得対象の購入注文ID
+         * @return 注文書およびSKU付き明細を含むPurchaseOrderDTOを返すResponseDTO
+         * @throws NotFoundException 指定された注文書が存在しない場合
+         */
         @Override
         public ResponseDTO<PurchaseOrderDTO> getPurchaseOrderDetailsByPOIdWithSku(Long purchaseOrderId) {
 
@@ -355,6 +371,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                 .build();
         }
 
+        /**
+         * 指定された購入注文を発注処理として確定します。
+         *
+         * @param purchaseOrderId 発注処理する購入注文ID
+         * @return 更新後のPurchaseOrderDTOを返すResponseDTO
+         * @throws NotFoundException     注文書が存在しない場合
+         * @throws IllegalStateException 注文書のステータスがNEWでない、商品が含まれない、または数量・単価が無効な場合
+         */
         @Override
         public ResponseDTO<PurchaseOrderDTO> placeOrder(Long purchaseOrderId) {
 

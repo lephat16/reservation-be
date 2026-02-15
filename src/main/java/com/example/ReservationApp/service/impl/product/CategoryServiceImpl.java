@@ -242,6 +242,11 @@ public class CategoryServiceImpl implements CategoryService {
                                 .build();
         }
 
+        /**
+         * 全カテゴリのサマリー情報一覧を取得します。
+         *
+         * @return カテゴリサマリーDTOのリスト
+         */
         @Override
         public ResponseDTO<List<CategorySummariesDTO>> getAllCategorySummaries() {
                 List<CategorySummariesDTO> summaryDTOs = categoryRepository.getAllCategorySummary();
@@ -253,6 +258,12 @@ public class CategoryServiceImpl implements CategoryService {
                                 .build();
         }
 
+        /**
+         * 指定カテゴリの売上・在庫の統計情報（概要）を取得します。
+         *
+         * @param categoryId カテゴリID
+         * @return 売上・在庫概要DTO
+         */
         @Override
         public ResponseDTO<CategoryInventorySalesOverviewDTO> getCategorySalesAndInventoryOverviewById(
                         Long categoryId) {
@@ -266,6 +277,13 @@ public class CategoryServiceImpl implements CategoryService {
                                 .build();
         }
 
+        /**
+         * 指定カテゴリの詳細サマリー情報を取得します。
+         * カテゴリ配下の商品一覧もあわせて返却します。
+         *
+         * @param categoryId カテゴリID
+         * @return カテゴリサマリーDTO
+         */
         @Override
         public ResponseDTO<CategorySummaryDTO> getCategorySummariesById(Long categoryId) {
                 Category category = categoryRepository.findById(categoryId)
@@ -285,27 +303,40 @@ public class CategoryServiceImpl implements CategoryService {
                                 .build();
         }
 
+        /**
+         * フラットなカテゴリ集計結果を
+         * Product → Supplier → Stock の階層構造に変換します。
+         *
+         * 1商品につき1つのProductStockDTOを生成し、
+         * 仕入先は重複排除、在庫はそのまま追加します。
+         *
+         * @param rows カテゴリ集計のフラットDTOリスト
+         * @return 商品単位にグルーピングされたProductStockDTOリスト
+         */
         public List<ProductStockDTO> buildProducts(List<CategorySummaryFlatDTO> rows) {
 
+                // 商品名をキーにして重複生成を防ぐ（順序保持のためLinkedHashMap使用）
                 Map<String, ProductStockDTO> productMap = new LinkedHashMap<>();
 
                 for (CategorySummaryFlatDTO r : rows) {
 
+                        // 既存の商品があれば取得、なければ新規生成
+                        // computeIfAbsentでコード簡潔化＋パフォーマンス向上
                         ProductStockDTO product = productMap.computeIfAbsent(r.getProductName(), k -> {
                                 ProductStockDTO p = ProductStockDTO.builder()
                                                 .productName(r.getProductName())
                                                 .suppliers(new ArrayList<>())
                                                 .stocks(new ArrayList<>())
                                                 .build();
-
                                 return p;
                         });
 
-                        // Supplier (dedupe)
+                        // Supplier情報（重複排除）
                         if (r.getSupplierId() != null) {
+                                // 同一仕入先が既に追加済みかチェック
                                 boolean exists = product.getSuppliers().stream()
                                                 .anyMatch(s -> s.getSupplierName().equals(r.getSupplierName()));
-
+                                // 未登録の場合のみ追加（重複防止）
                                 if (!exists) {
                                         product.getSuppliers().add(
                                                         SupplierPriceDTO.builder()
@@ -315,7 +346,7 @@ public class CategoryServiceImpl implements CategoryService {
                                 }
                         }
 
-                        // Stock
+                        // 在庫情報（そのまま追加）
                         if (r.getQuantity() != null) {
                                 product.getStocks().add(
                                                 StockDTO.builder()
@@ -324,7 +355,7 @@ public class CategoryServiceImpl implements CategoryService {
                                                                 .build());
                         }
                 }
-
+                // Map → List に変換して返却
                 return new ArrayList<>(productMap.values());
         }
 

@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,7 @@ public class AuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String token = getTokenFromRequest(request);
+        String token = getTokenFromCookies(request);
         if (token != null) {
             try {
                 String email = jwtUtils.extractUsername(token);
@@ -97,11 +98,16 @@ public class AuthFilter extends OncePerRequestFilter {
      * @param request HTTPリクエスト
      * @return JWTトークン、存在しない場合はnull
      */
-    private String getTokenFromRequest(HttpServletRequest request) {
-        String token = request.getHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
-            return token.substring(7);
+    private String getTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (("accessToken".equals(cookie.getName()))) {
+                    return cookie.getValue();
+                }
+            }
         }
         return null;
+        
     }
 }

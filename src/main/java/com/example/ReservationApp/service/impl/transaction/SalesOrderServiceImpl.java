@@ -82,12 +82,6 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 .stream()
                 .collect(Collectors.toMap(SupplierProduct::getSupplierSku, sp -> sp));
 
-        // Map<String, List<InventoryStockDTO>> stockMap = inventoryStockRepository
-        //         .findBySupplierProduct_SupplierSkuIn(skus)
-        //         .stream()
-        //         .map(inventoryStockMapper::toDTO)
-        //         .collect(Collectors.groupingBy(InventoryStockDTO::getSku));
-
         Map<String, SalesOrderDetail> detailMap = new HashMap<>();
         List<SalesOrderDetail> details = new ArrayList<>();
 
@@ -114,66 +108,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 details.add(detail);
                 detailMap.put(supplierProduct.getSupplierSku(), detail);
             }
-
-            // // 在庫の有無チェック
-            // List<InventoryStockDTO> stocks =
-            // stockMap.get(supplierProduct.getSupplierSku());
-            // if (stocks == null || stocks.isEmpty()) {
-            // throw new InvalidCredentialException("在庫情報が存在しません。SKU=" +
-            // supplierProduct.getSupplierSku());
-            // }
-
-            // // 在庫数計算（総数-予約済み） & 必要数チェック
-            // int total = stocks.stream().mapToInt(InventoryStockDTO::getQuantity).sum();
-            // int reserved =
-            // stocks.stream().mapToInt(InventoryStockDTO::getReservedQuantity).sum();
-            // int available = total - reserved;
-            // int required = detailMap.get(supplierProduct.getSupplierSku()).getQty();
-
-            // if (available < required) {
-            // throw new InvalidCredentialException(
-            // "在庫が不足しています。SKU=" + supplierProduct.getSupplierSku() +
-            // ", required=" + required +
-            // ", available=" + available);
-            // }
         }
-
-        // // 在庫予約処理
-        // for (SalesOrderDetail detail : details) {
-        // int remaining = detail.getQty();
-        // List<InventoryStockDTO> stocks =
-        // stockMap.get(detail.getSupplierProduct().getSupplierSku());
-
-        // List<Long> stockIds = stocks.stream().map(InventoryStockDTO::getId).toList();
-        // List<InventoryStock> stockEntities =
-        // inventoryStockRepository.findAllByIdsWithWarehouse(stockIds);
-
-        // Map<Long, InventoryStock> stockByIdMap = stockEntities.stream()
-        // .collect(Collectors.toMap(InventoryStock::getId, s -> s));
-        // for (InventoryStockDTO stockDTO : stocks) {
-        // int availableQty = stockDTO.getQuantity() - stockDTO.getReservedQuantity();
-        // int reserveQty = Math.min(availableQty, remaining);
-        // remaining -= reserveQty;
-
-        // InventoryStock stockEntity = stockByIdMap.get(stockDTO.getId());
-        // if (stockEntity == null)
-        // throw new NotFoundException(
-        // "在庫が見つかりません。stockId=" + stockDTO.getId());
-
-        // // 予約数量更新
-        // stockEntity.setReservedQuantity(stockEntity.getReservedQuantity() +
-        // reserveQty);
-        // inventoryStockRepository.save(stockEntity);
-
-        // if (remaining == 0)
-        // break;
-        // }
-
-        // if (remaining > 0) {
-        // throw new InvalidCredentialException(
-        // "在庫が不足しています。productId=" + detail.getSupplierProduct().getSupplierSku());
-        // }
-        // }
 
         // SalesOrder に詳細と合計金額セット & 保存
         so.setDetails(details);
@@ -270,6 +205,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 .build();
     }
 
+    /**
+     * 指定された販売注文書(SalesOrder)の数量および説明を更新
+     *
+     * @param soId          更新対象の販売注文書ID
+     * @param salesOrderDTO 更新内容を含むSalesOrderDTO
+     * @return 更新済みのSalesOrderDTOを含むResponseDTO
+     * @throws NotFoundException     指定されたSalesOrderが存在しない場合
+     * @throws IllegalStateException NEW状態でない注文書や存在しないSKUが含まれる場合
+     */
     @Override
     @Transactional
     public ResponseDTO<SalesOrderDTO> updateSalesOrderQuantityAndDescription(Long soId,
@@ -314,7 +258,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     }
 
     /**
-     * 指定されたIDの販売注文書を削除する。
+     * 指定されたIDの販売注文書を削除
      *
      * @param soId 削除対象の販売注文書ID
      * @return ResponseDTO<Void> 削除成功メッセージを含むレスポンス
@@ -342,7 +286,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     }
 
     /**
-     * 販売注文書の明細リストから合計金額を計算する。
+     * 販売注文書の明細リストから合計金額を計算
      *
      * @param details 販売注文書の明細リスト
      * @return BigDecimal 計算された合計金額

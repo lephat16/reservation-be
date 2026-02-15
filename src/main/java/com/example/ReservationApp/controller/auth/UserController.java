@@ -1,6 +1,5 @@
 package com.example.ReservationApp.controller.auth;
 
-
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -29,10 +28,11 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 
     private final UserService userService;
+
     /**
      * すべてのユーザーを取得するエンドポイント
      *
-     * @return 全ユーザー情報を含むResponseDTO
+     * @return 全ユーザー情報
      */
     @GetMapping("/all")
     public ResponseEntity<ResponseDTO<List<UserDTO>>> getAllUsers() {
@@ -43,7 +43,7 @@ public class UserController {
      * 指定IDのユーザーを取得するエンドポイント
      *
      * @param id 取得したいユーザーのID
-     * @return 該当ユーザー情報を含むResponseDTO
+     * @return 該当ユーザー情報
      */
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDTO<UserDTO>> getUserById(@PathVariable Long id) {
@@ -55,7 +55,7 @@ public class UserController {
      *
      * @param id      更新対象ユーザーのID
      * @param userDTO 更新内容を含むUserDTO
-     * @return 更新結果を含むResponseDTO
+     * @return 更新後のユーザー情報
      */
     @PutMapping("/update/{id}")
     public ResponseEntity<ResponseDTO<UserDTO>> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
@@ -66,18 +66,22 @@ public class UserController {
      * 指定IDのユーザーを削除するエンドポイント
      *
      * @param id 削除対象ユーザーのID
-     * @return 削除結果を含むResponseDTO
+     * @return 削除後のユーザー情報
      */
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO<Void>> deleteUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.deleteUser(id));
     }
 
+    /**
+     * 現在ログイン中のユーザー情報を取得するエンドポイント
+     *
+     * @return ログイン中ユーザーの情報
+     */
     @GetMapping("/current")
     public ResponseEntity<ResponseDTO<UserDTO>> getLogginedUser() {
-        
+
         return ResponseEntity.ok(userService.getCurrentLoggedInUser());
     }
 
-    
 }

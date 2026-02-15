@@ -11,9 +11,6 @@ import lombok.Data;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class LoginResponseDTO {
-
-    private String token;
-    private String refreshToken;
     private String expirationTime;
     private UserRole role;
     private UserDTO user;

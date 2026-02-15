@@ -147,6 +147,15 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
                                 .build();
         }
 
+        /**
+         * 指定された購入注文明細の数量を更新する
+         *
+         * @param detailId 更新対象のPurchaseOrderDetailのID
+         * @param newQty   新しい数量
+         * @return 更新後のPurchaseOrderDetailDTOを含むレスポンス
+         * @throws NotFoundException     指定された明細が存在しない場合
+         * @throws IllegalStateException 購入注文のステータスがNEWでない場合
+         */
         @Override
         @Transactional
         public ResponseDTO<PurchaseOrderDetailDTO> updateDetailQuantity(Long detailId, int newQty) {
@@ -215,7 +224,11 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
         }
 
         /**
-         * 注文IDでDetailDTOリストを取得（Entity取得版）
+         * 注文IDに基づいてPurchaseOrderDetailDTOリストを取得（Entity取得版）
+         *
+         * @param purchaseOrderId 対象の購入注文ID
+         * @return PurchaseOrderDetailDTOのリスト
+         * @throws NotFoundException 指定された注文書が存在しない場合
          */
         @Override
         public List<PurchaseOrderDetailDTO> getDetailEntitysByOrder(Long purchaseOrderId) {
@@ -228,7 +241,10 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
         }
 
         /**
-         * 複数注文DTOから全てのDetailDTOを取得
+         * 複数のPurchaseOrderDTOから全てのPurchaseOrderDetailDTOを取得
+         *
+         * @param purchaseOrderDTOs 対象のPurchaseOrderDTOリスト
+         * @return PurchaseOrderDetailDTOのリスト
          */
         @Override
         public List<PurchaseOrderDetailDTO> getAllDetailEntitys(List<PurchaseOrderDTO> purchaseOrderDTOs) {
@@ -245,8 +261,10 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
         }
 
         /**
-         * PurchaseOrderの合計金額更新
-         * 書き込みメソッドから呼ばれる
+         * PurchaseOrderの合計金額を更新する
+         * 書き込み系メソッドから呼ばれる
+         *
+         * @param po 対象のPurchaseOrderエンティティ
          */
         private void updateTotal(PurchaseOrder po) {
                 BigDecimal total = po.getDetails().stream()
@@ -256,6 +274,12 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
                 // poRepository.save(po);
         }
 
+        /**
+         * 注文IDに基づいてPurchaseOrderDetailDTOリストを取得（SKU付き）
+         *
+         * @param purchaseOrderId 対象の購入注文ID
+         * @return PurchaseOrderDetailDTOのリスト（SKU情報付き）
+         */
         @Override
         public ResponseDTO<List<PurchaseOrderDetailDTO>> getByPurchaseOrderWithSku(Long purchaseOrderId) {
 
@@ -280,6 +304,12 @@ public class PurchaseOrderDetailServiceImpl implements PurchaseOrderDetailServic
                                 .build();
         }
 
+        /**
+         * 発注処理中のPurchaseOrderDetailと残数量を取得
+         *
+         * @param purchaseOrderId 対象の購入注文ID
+         * @return PurchaseOrderDetailDTOのリスト（発注済数量、受領済数量、残数量付き）
+         */
         @Override
         public ResponseDTO<List<PurchaseOrderDetailDTO>> getPurchaseProcessingDetailWithRemainingQty(
                         Long purchaseOrderId) {

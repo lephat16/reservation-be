@@ -167,6 +167,7 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
                                 sh.created_at,
                                 sp.supplier_sku,
                                 p.name AS productName,
+                                p.product_code AS code,
                                 p.unit,
                                 wh.name AS warehouse_name,
                         COALESCE(so_user.name, po_user.name) AS user_name,

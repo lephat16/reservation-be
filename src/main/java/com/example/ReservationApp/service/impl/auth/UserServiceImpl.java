@@ -1,7 +1,6 @@
 package com.example.ReservationApp.service.impl.auth;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -16,7 +15,6 @@ import com.example.ReservationApp.dto.LoginRequestDTO;
 import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
-import com.example.ReservationApp.dto.response.auth.RefreshTokenDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.enums.UserRole;
@@ -31,6 +29,8 @@ import com.example.ReservationApp.service.auth.UserService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
  * - ユーザーのログイン
  * - ユーザー情報の取得・更新・削除
  * - JWTトークン生成と認証関連処理
+ * - ユーザーのログアウト
  */
 @Service
 @RequiredArgsConstructor
@@ -72,14 +73,11 @@ public class UserServiceImpl implements UserService {
             throw new InvalidCredentialException("パスワードは間違っています");
         }
 
-        String token = jwtUtils.generateToken(loginRequestDTO.getEmail());
-        String refreshToken = jwtUtils.generateRefreshToken(loginRequestDTO.getEmail());
         log.info("{}", user.getRole());
+
         UserDTO userDTO = userMapper.toDTO(user);
         LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
                 .role(user.getRole())
-                .token(token)
-                .refreshToken(refreshToken)
                 .expirationTime("一時間")
                 .user(userDTO)
                 .build();
@@ -141,7 +139,6 @@ public class UserServiceImpl implements UserService {
             ex.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "内部サーバーエラーが発生しました");
         }
-
     }
 
     /**
@@ -160,7 +157,6 @@ public class UserServiceImpl implements UserService {
                 .message("全てのユーザー取得に成功しました")
                 .data(userDTOs)
                 .build();
-
     }
 
     /**
@@ -253,6 +249,15 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
+    /**
+     * 現在ログイン中のユーザー情報をEntity形式で取得する。
+     *
+     * Spring Securityの認証情報からメールアドレスを取得し、DBからユーザーを検索。
+     * 認証されていない場合やユーザーが見つからない場合はNotFoundExceptionを投げる。
+     *
+     * @return 現在ログイン中のUserエンティティ
+     * @throws NotFoundException 認証されていない場合またはユーザーが存在しない場合
+     */
     public User getCurrentUserEntity() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
@@ -263,41 +268,94 @@ public class UserServiceImpl implements UserService {
         throw new NotFoundException("認証されていません");
     }
 
+    /**
+     * リフレッシュトークンを使用してアクセストークンを再発行する処理
+     *
+     * Cookie に保存されている refreshToken を検証し、
+     * 有効な場合は新しい accessToken と refreshToken を生成して
+     * HttpOnly Cookie として再設定する。
+     *
+     * フロントエンドではアクセストークンの有効期限切れ（401発生時）に
+     * 自動的に本APIを呼び出して再認証を行う。
+     *
+     * @param response     HttpServletResponse（Cookieの再設定に使用）
+     * @param refreshToken Cookieから取得したリフレッシュトークン
+     * @return 処理結果
+     */
     @Override
-    public ResponseDTO<RefreshTokenDTO> refresh(Map<String, String> body) {
-        String refreshToken = body.get("refreshToken");
+    public ResponseDTO<Void> refresh(HttpServletResponse response, String refreshToken) {
+
         if (refreshToken == null || refreshToken.isBlank()) {
-            return ResponseDTO.<RefreshTokenDTO>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("リフレッシュトークンが必要です")
+            return ResponseDTO.<Void>builder()
+                    .status(HttpStatus.UNAUTHORIZED.value())
+                    .message("リフレッシュトークンがありません。再ログインしてください")
                     .build();
         }
-
         try {
             String email = jwtUtils.extractUsername(refreshToken);
-
             String newAccessToken = jwtUtils.refreshAccessToken(email, refreshToken);
-
             String newRefreshToken = jwtUtils.generateRefreshToken(email);
 
-            return ResponseDTO.<RefreshTokenDTO>builder()
+            Cookie accessCookie = new Cookie("accessToken", newAccessToken);
+            accessCookie.setHttpOnly(true);
+            accessCookie.setSecure(false);
+            accessCookie.setPath("/");
+            accessCookie.setMaxAge(60 * 15);
+            response.addCookie(accessCookie);
+
+            Cookie refreshCookie = new Cookie("refreshToken", newRefreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(false);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(7 * 24 * 60 * 60);
+            response.addCookie(refreshCookie);
+
+            return ResponseDTO.<Void>builder()
                     .status(HttpStatus.OK.value())
                     .message("アクセストークンが再発行されました")
-                    // .token(newAccessToken)
-                    // .refreshToken(newRefreshToken)
-                    .data(RefreshTokenDTO.builder()
-                            .token(newAccessToken)
-                            .refreshToken(newRefreshToken)
-                            .build())
                     .build();
-
         } catch (Exception e) {
-            log.error("Refresh token error: ", e);
-            return ResponseDTO.<RefreshTokenDTO>builder()
+            log.error("リフレッシュトークンのエラー", e);
+            return ResponseDTO.<Void>builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
                     .message("リフレッシュトークンが無効です。再ログインしてください")
                     .build();
         }
     }
 
+    /**
+     * ログアウト処理
+     *
+     * ブラウザに保存されている accessToken / refreshToken の
+     * Cookie を削除（MaxAge=0）し、認証情報を無効化する。
+     *
+     * フロントエンドではログアウトボタン押下時に呼び出され、
+     * セッションを完全に終了させるために使用する。
+     *
+     * @param response HttpServletResponse（Cookie削除に使用）
+     * @return 処理結果
+     */
+    @Override
+    public ResponseDTO<Void> logout(HttpServletResponse response) {
+
+        Cookie accessCookie = new Cookie("accessToken", null);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(false);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(0);
+
+        Cookie refreshCookie = new Cookie("refreshToken", null);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/");
+        refreshCookie.setMaxAge(0);
+
+        response.addCookie(accessCookie);
+        response.addCookie(refreshCookie);
+
+        return ResponseDTO.<Void>builder()
+                .status(200)
+                .message("ログアウトしました")
+                .build();
+    }
 }

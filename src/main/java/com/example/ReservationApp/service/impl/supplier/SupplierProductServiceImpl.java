@@ -79,7 +79,8 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                 String normalizedSku = null;
                 if (spDTO.getSupplierSku() != null && !spDTO.getSupplierSku().isBlank()) {
                         normalizedSku = spDTO.getSupplierSku().toUpperCase();
-                        boolean exists = supplierProductRepository.existsBySupplierIdAndSupplierSku(spDTO.getSupplierId(),
+                        boolean exists = supplierProductRepository.existsBySupplierIdAndSupplierSku(
+                                        spDTO.getSupplierId(),
                                         normalizedSku);
                         if (exists) {
                                 throw new AlreadyExistException("このSKUは既に別の商品に使用されています");
@@ -143,6 +144,13 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                                 .build();
         }
 
+        /**
+         * 指定SKUの商品情報と価格履歴を取得する
+         *
+         * @param sku 商品SKU
+         * @return SupplierProductDTO（価格履歴含む）
+         * @throws NotFoundException SKUが存在しない場合
+         */
         @Override
         public ResponseDTO<SupplierProductDTO> getProductsBySkuWithPriceHistory(String sku) {
 
@@ -271,6 +279,13 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                 }
         }
 
+        /**
+         * 指定した仕入先の仕入れ商品と在庫情報をカテゴリ別に取得する
+         *
+         * @param supplierId 取得対象の仕入先ID
+         * @return カテゴリごとのSupplierProductDTOリスト（在庫情報含む）
+         * @throws NotFoundException 指定した仕入先が存在しない場合
+         */
         @Override
         public ResponseDTO<List<CategoryProductsDTO>> getSupplierProductsWithStock(Long supplierId) {
 
@@ -316,6 +331,13 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                                 .build();
         }
 
+        /**
+         * 指定した仕入先の仕入れ商品のリードタイム情報を取得する
+         *
+         * @param supplierId 取得対象の仕入先ID
+         * @return 仕入先ごとのSupplierProductDTOリスト（リードタイム含む）
+         * @throws NotFoundException 指定した仕入先が存在しない場合
+         */
         @Override
         public ResponseDTO<List<CategoryProductsDTO>> getSupplierProductsWithLeadTime(Long supplierId) {
 

@@ -77,8 +77,14 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .build();
     }
 
+    /**
+     * 有効な倉庫一覧をロケーション情報付きで取得します。
+     *
+     * @return 倉庫DTOのリスト
+     */
     public ResponseDTO<List<WarehouseDTO>> getAllWarehouseWithLocation() {
-
+        
+        // アクティブな倉庫情報をDBから取得（DTOで直接取得してパフォーマンス最適化）
         List<WarehouseDTO> warehouseDTOs = warehouseRepository.findActiveWarehousesWithLocation();
 
         return ResponseDTO.<List<WarehouseDTO>>builder()
@@ -221,9 +227,20 @@ public class WarehouseServiceImpl implements WarehouseService {
                 .build();
     }
 
+    /**
+     * 全倉庫の在庫変動合計数量を含む倉庫情報を取得する処理
+     *
+     * 各倉庫ごとの在庫増減数量（入庫・出庫の合計変動数）を集計し、
+     * 倉庫情報と合わせて WarehouseWithTotalChangedQtyDTO として返却する。
+     *
+     * 集計処理は Repository 側（SQLのSUM/集約関数）で実施する。
+     * 主に倉庫一覧画面や在庫ダッシュボードのサマリー表示で使用される。
+     *
+     * @return 倉庫情報 + 在庫変動合計数量のリスト
+     */
     @Override
     public ResponseDTO<List<WarehouseWithTotalChangedQtyDTO>> getWarehouseWithTotalChangedQty() {
-        // 住所に部分一致する倉庫を検索
+        // 倉庫ごとの在庫変動合計数量を集計して取得
         List<WarehouseWithTotalChangedQtyDTO> warehouses = warehouseRepository.findWarehouseWithTotalChangedQty();
 
         return ResponseDTO.<List<WarehouseWithTotalChangedQtyDTO>>builder()
