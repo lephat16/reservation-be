@@ -1,7 +1,11 @@
 package com.example.ReservationApp.controller.auth;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +16,7 @@ import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
+import com.example.ReservationApp.enums.UserRole;
 import com.example.ReservationApp.security.JwtUtils;
 import com.example.ReservationApp.service.auth.UserService;
 
@@ -110,4 +115,29 @@ public class AuthController {
 
         return ResponseEntity.ok(userService.logout(response));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<ResponseDTO<UserDTO>> me(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.ok(ResponseDTO.<UserDTO>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("Not logged in")
+                    .data(null)
+                    .build());
+        }
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        UserDTO userDTO = UserDTO.builder()
+                .email(userDetails.getUsername())
+                .role(UserRole.valueOf(
+                        userDetails.getAuthorities().iterator().next().getAuthority())) // lấy role đầu tiên
+                .build();
+
+        return ResponseEntity.ok(ResponseDTO.<UserDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message("OK")
+                .data(userDTO)
+                .build());
+    }
+
 }

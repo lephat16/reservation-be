@@ -73,8 +73,36 @@ public class AuthFilter extends OncePerRequestFilter {
                 }
             } catch (ExpiredJwtException e) {
                 log.warn("JWT expired: {}", e.getMessage());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                String refreshToken = getRefreshTokenFromCookies(request);
+
+                if (refreshToken == null) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
+                try {
+                    String email = jwtUtils.extractUsername(refreshToken);
+                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+                    if (jwtUtils.validateToken(refreshToken, userDetails)) {
+                        String newAccessToken = jwtUtils.generateToken(email);
+                        Cookie newCookie = new Cookie("accessToken", newAccessToken);
+                        newCookie.setHttpOnly(true);
+                        newCookie.setSecure(false);
+                        newCookie.setPath("/");
+                        newCookie.setMaxAge(15 * 60);
+                        response.addCookie(newCookie);
+
+                        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                } catch (Exception ex) {
+                    log.error("Refresh token invalid: {}", ex.getMessage());
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
+                }
             } catch (Exception e) {
                 log.error("Invalid JWT: {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -108,6 +136,18 @@ public class AuthFilter extends OncePerRequestFilter {
             }
         }
         return null;
-        
+
+    }
+
+    private String getRefreshTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if ((cookies != null)) {
+            for (Cookie cookie : cookies) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 }
