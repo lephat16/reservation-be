@@ -1,5 +1,6 @@
 package com.example.ReservationApp.service.impl.auth;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Sort;
@@ -14,15 +15,19 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.ReservationApp.dto.LoginRequestDTO;
 import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
+import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.enums.UserRole;
 import com.example.ReservationApp.exception.InvalidCredentialException;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.exception.AlreadyExistException;
+import com.example.ReservationApp.exception.BadRequestException;
 import com.example.ReservationApp.generator.IdGeneratorUtil;
 import com.example.ReservationApp.mapper.UserMapper;
+import com.example.ReservationApp.repository.user.LoginHistoryRepository;
 import com.example.ReservationApp.repository.user.UserRepository;
 import com.example.ReservationApp.security.JwtUtils;
 import com.example.ReservationApp.service.auth.UserService;
@@ -30,6 +35,7 @@ import com.example.ReservationApp.service.auth.UserService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +59,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final UserMapper userMapper;
+    private final LoginHistoryRepository loginHistoryRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -64,17 +71,18 @@ public class UserServiceImpl implements UserService {
      * @return ログイン結果を含むResponseDTO
      */
     @Override
-    public ResponseDTO<LoginResponseDTO> loginUser(LoginRequestDTO loginRequestDTO) {
+    public ResponseDTO<LoginResponseDTO> loginUser(LoginRequestDTO loginRequestDTO, HttpServletRequest request) {
 
         User user = userRepository.findByEmail(loginRequestDTO.getEmail())
                 .orElseThrow(() -> new NotFoundException("メールアドレスが見つかりません"));
 
         if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
+            saveLoginHistory(user, request, "FAILED");
             throw new InvalidCredentialException("パスワードは間違っています");
         }
 
         log.info("{}", user.getRole());
-
+        saveLoginHistory(user, request, "SUCCESS");
         UserDTO userDTO = userMapper.toDTO(user);
         LoginResponseDTO loginResponseDTO = LoginResponseDTO.builder()
                 .role(user.getRole())
@@ -201,13 +209,9 @@ public class UserServiceImpl implements UserService {
         if (userDTO.getRole() != null) {
             existingUser.setRole(userDTO.getRole());
         }
-        if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
-            existingUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        }
 
         userRepository.save(existingUser);
-        // log.info(userDTO.toString());
-        // log.info(updatedUser.toString());
+
         UserDTO updatedUserDTO = userMapper.toDTO(existingUser);
         return ResponseDTO.<UserDTO>builder()
                 .status(HttpStatus.OK.value())
@@ -246,7 +250,12 @@ public class UserServiceImpl implements UserService {
                     .data(userMapper.toDTO(user))
                     .build();
         }
-        return null;
+        return ResponseDTO.<UserDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message("Not logged in")
+                .data(null)
+                .build();
+
     }
 
     /**
@@ -357,5 +366,42 @@ public class UserServiceImpl implements UserService {
                 .status(200)
                 .message("ログアウトしました")
                 .build();
+    }
+
+    @Transactional
+    @Override
+    public ResponseDTO<UserDTO> changePassword(Long userId, ChangePasswordRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("ユーザーが見つかりません"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new InvalidCredentialException("パスワードは間違っています");
+        }
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("新しいパスワードが一致しません");
+        }
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("以前のパスワードと同じです");
+        }
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        UserDTO userDTO = userMapper.toDTO(user);
+        return ResponseDTO.<UserDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message("パスワードが変更されました")
+                .data(userDTO)
+                .build();
+    }
+
+    public void saveLoginHistory(User user, HttpServletRequest request, String status) {
+
+        LoginHistory history = new LoginHistory();
+        history.setUserId(user.getId());
+        history.setLoginTime(LocalDateTime.now());
+        history.setIpAddress(request.getRemoteAddr());
+        history.setUserAgent(request.getHeader("User-Agent"));
+        history.setStatus(status);
+
+        loginHistoryRepository.save(history);
     }
 }

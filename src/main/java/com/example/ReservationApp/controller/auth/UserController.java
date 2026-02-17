@@ -12,10 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.service.auth.UserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
 
 /**
  * ユーザー管理用のAPIコントローラー
@@ -84,4 +87,17 @@ public class UserController {
         return ResponseEntity.ok(userService.getCurrentLoggedInUser());
     }
 
+    @PutMapping("/{id}/password")
+    public ResponseEntity<ResponseDTO<UserDTO>> changePassword(
+            @PathVariable Long id,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        return ResponseEntity.ok(userService.changePassword(id, request));
+    }
+
+    // @GetMapping("/login-history")
+    // public ResponseEntity<ResponseDTO<UserDTO>> getLoginHistory() {
+
+    //     return ResponseEntity.ok(userService.saveLoginHistory());
+    // }
 }

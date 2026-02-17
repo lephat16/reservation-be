@@ -14,6 +14,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,6 +45,8 @@ public class User {
     @NotBlank(message = "メールアドレスは必須です")
     private String email;
     @NotBlank(message = "パスワードは必須です")
+    @Size(min = 8, message = "パスワードは8文字以上必要です")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).+$", message = "大文字・小文字・数字・記号を含めてください")
     private String password;
     @NotBlank(message = "電話番号は必須です")
     @Column(name = "phone_number")
