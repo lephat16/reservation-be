@@ -19,4 +19,5 @@ public class LoginRequestDTO {
     @NotBlank(message = "パスワードは必須です")
     private String password;
 
+    private boolean isRemember = false;
 }

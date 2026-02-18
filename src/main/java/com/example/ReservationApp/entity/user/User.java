@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -43,12 +44,14 @@ public class User {
     @NotBlank(message = "名前は必須です")
     private String name;
     @NotBlank(message = "メールアドレスは必須です")
+    @Email(message = "正しいメール形式を入力してください")
     private String email;
     @NotBlank(message = "パスワードは必須です")
     @Size(min = 8, message = "パスワードは8文字以上必要です")
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).+$", message = "大文字・小文字・数字・記号を含めてください")
     private String password;
     @NotBlank(message = "電話番号は必須です")
+    @Pattern(regexp = "^[0-9]{10,11}$", message = "正しい電話番号を入力してください")
     @Column(name = "phone_number")
     private String phoneNumber;
     @Enumerated(EnumType.STRING)

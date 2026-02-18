@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.user.UserDTO;
+import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.service.auth.UserService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
 
 /**
  * ユーザー管理用のAPIコントローラー
@@ -95,9 +95,26 @@ public class UserController {
         return ResponseEntity.ok(userService.changePassword(id, request));
     }
 
-    // @GetMapping("/login-history")
-    // public ResponseEntity<ResponseDTO<UserDTO>> getLoginHistory() {
+    @GetMapping("/login-history")
+    public ResponseEntity<ResponseDTO<List<LoginHistory>>> getLoginHistory() {
 
-    //     return ResponseEntity.ok(userService.saveLoginHistory());
+        return ResponseEntity.ok(userService.getLoginHistory());
+    }
+
+    // spring.mail.passwordを用意し次第、また進もう
+
+    // @PostMapping("/forgot-password")
+    // public ResponseEntity<ResponseDTO<Void>> forgotPassword(
+    //         @Valid @RequestBody ForgotPasswordDTO dto) {
+
+    //     return ResponseEntity.ok(userService.sendResetPasswordEmail(dto.getEmail()));
     // }
+
+    // @PostMapping("/reset-password")
+    // public ResponseEntity<ResponseDTO<Void>> resetPassword(
+    //         @Valid @RequestBody ResetPasswordDTO dto) {
+
+    //     return ResponseEntity.ok(userService.resetPassword(dto.getToken(), dto.getNewPassword()));
+    // }
+
 }

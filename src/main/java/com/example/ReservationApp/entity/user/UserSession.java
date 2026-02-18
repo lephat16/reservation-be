@@ -6,23 +6,34 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Entity
-public class LoginHistory {
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
+@Builder
+public class UserSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String userId;
-    private LocalDateTime loginTime;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    private String refreshToken;
+
     private String ipAddress;
     private String userAgent;
-    private String status;
+
+    private LocalDateTime expiry;
+
+    @Builder.Default
+    private boolean revoked = false;
 }

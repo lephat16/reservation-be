@@ -12,10 +12,8 @@ import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
-import com.example.ReservationApp.security.JwtUtils;
 import com.example.ReservationApp.service.auth.UserService;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -32,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final UserService userService;
-    private final JwtUtils jwtUtils;
 
     /**
      * 新しいユーザーを登録するエンドポイント
@@ -56,28 +53,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ResponseDTO<LoginResponseDTO>> loginUser(
             @RequestBody @Valid LoginRequestDTO loginRequestDTO,
+            HttpServletRequest request,
             HttpServletResponse response) {
 
-        ResponseDTO<LoginResponseDTO> result = userService.loginUser(loginRequestDTO);
-
-        String accessToken = jwtUtils.generateToken(loginRequestDTO.getEmail());
-        String refreshToken = jwtUtils.generateRefreshToken(loginRequestDTO.getEmail());
-
-        Cookie accessCookie = new Cookie("accessToken", accessToken);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(60 * 15);
-        accessCookie.setAttribute("SameSite", "Strict");
-        response.addCookie(accessCookie);
-
-        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(7 * 24 * 60 * 60);
-        refreshCookie.setAttribute("SameSite", "Strict");
-        response.addCookie(refreshCookie);
+        ResponseDTO<LoginResponseDTO> result = userService.loginUser(loginRequestDTO, request, response);
 
         return ResponseEntity.ok(result);
     }
@@ -106,9 +85,11 @@ public class AuthController {
      * @return ログアウト結果
      */
     @PostMapping("/logout")
-    public ResponseEntity<ResponseDTO<Void>> logout(HttpServletResponse response) {
+    public ResponseEntity<ResponseDTO<Void>> logout(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response) {
 
-        return ResponseEntity.ok(userService.logout(response));
+        return ResponseEntity.ok(userService.logout(response, refreshToken));
     }
 
 }
