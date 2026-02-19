@@ -7,9 +7,12 @@ import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
+import com.example.ReservationApp.dto.user.CreatePasswordDTO;
+import com.example.ReservationApp.dto.user.CreateUserDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
-import com.example.ReservationApp.entity.user.User;
+import com.example.ReservationApp.entity.user.TokenType;
+import com.example.ReservationApp.security.AuthUser;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,11 +42,12 @@ public interface UserService {
 
     ResponseDTO<List<LoginHistory>> getLoginHistory();
 
-    ResponseDTO<UserDTO> createUserByAdmin(RegisterRequestDTO registerRequestDTO, User adminUser);
+    ResponseDTO<UserDTO> createUserByAdmin(CreateUserDTO request, AuthUser authUser);
 
-    // spring.mail.passwordを用意し次第、また進もう
-    // ResponseDTO<Void> sendResetPasswordEmail(String email);
+    ResponseDTO<Void> createPassword(CreatePasswordDTO request);
 
-    // ResponseDTO<Void> resetPassword(String token, String newPassword);
+    ResponseDTO<Void> sendPasswordTokenEmail(String email, TokenType type, int expiryMinutes);
+
+    ResponseDTO<Void> resetPassword(String token, String newPassword);
 
 }

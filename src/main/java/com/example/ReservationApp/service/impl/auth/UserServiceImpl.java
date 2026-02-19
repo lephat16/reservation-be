@@ -2,9 +2,13 @@ package com.example.ReservationApp.service.impl.auth;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,8 +21,12 @@ import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
+import com.example.ReservationApp.dto.user.CreatePasswordDTO;
+import com.example.ReservationApp.dto.user.CreateUserDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
+import com.example.ReservationApp.entity.user.PasswordResetToken;
+import com.example.ReservationApp.entity.user.TokenType;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.entity.user.UserSession;
 import com.example.ReservationApp.enums.UserRole;
@@ -29,8 +37,10 @@ import com.example.ReservationApp.exception.BadRequestException;
 import com.example.ReservationApp.generator.IdGeneratorUtil;
 import com.example.ReservationApp.mapper.UserMapper;
 import com.example.ReservationApp.repository.user.LoginHistoryRepository;
+import com.example.ReservationApp.repository.user.PasswordResetTokenRepository;
 import com.example.ReservationApp.repository.user.UserRepository;
 import com.example.ReservationApp.repository.user.UserSessionRepository;
+import com.example.ReservationApp.security.AuthUser;
 import com.example.ReservationApp.security.JwtUtils;
 import com.example.ReservationApp.service.auth.UserService;
 
@@ -63,8 +73,8 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final LoginHistoryRepository loginHistoryRepository;
     private final UserSessionRepository userSessionRepository;
-    // private final PasswordResetTokenRepository passwordResetTokenRepository;
-    // private final JavaMailSender mailSender;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final JavaMailSender mailSender;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -186,21 +196,27 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
-    public ResponseDTO<UserDTO> createUserByAdmin(RegisterRequestDTO request, User adminUser) {
+    public ResponseDTO<UserDTO> createUserByAdmin(CreateUserDTO request, AuthUser authUser) {
 
+        User adminUser = userRepository.findByEmail(authUser.getUsername())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "管理者が見つかりません"));
         if (adminUser.getRole() != UserRole.ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "管理者のみユーザーを作成できます");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AlreadyExistException("メールアドレスはすでに存在しています");
         }
+
+        String tempPassword = UUID.randomUUID().toString();
+
         User userToSave = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
                 .role(request.getRole() != null ? request.getRole() : UserRole.STAFF)
+                .password(passwordEncoder.encode(tempPassword))
                 .build();
 
         String prefix = switch (userToSave.getRole()) {
@@ -211,6 +227,8 @@ public class UserServiceImpl implements UserService {
 
         userToSave.setUserId(IdGeneratorUtil.generateUserId(entityManager, prefix));
         userRepository.save(userToSave);
+
+        sendPasswordTokenEmail(request.getEmail(), TokenType.CREATE_PASSWORD, 30);
 
         return ResponseDTO.<UserDTO>builder()
                 .status(HttpStatus.OK.value())
@@ -445,7 +463,7 @@ public class UserServiceImpl implements UserService {
         response.addCookie(refreshCookie);
 
         return ResponseDTO.<Void>builder()
-                .status(200)
+                .status(HttpStatus.OK.value())
                 .message("ログアウトしました")
                 .build();
     }
@@ -475,6 +493,27 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Transactional
+    @Override
+    public ResponseDTO<Void> createPassword(CreatePasswordDTO request) {
+
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "無効なトークンです"));
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "トークンの有効期限が切れています");
+        }
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+        passwordResetTokenRepository.delete(resetToken);
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("パスワードの設定が完了しました")
+                .build();
+    }
+
     public void saveLoginHistory(User user, HttpServletRequest request, String status) {
 
         LoginHistory history = new LoginHistory();
@@ -500,68 +539,66 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    // spring.mail.passwordを用意し次第、また進もう
+    @Override
+    public ResponseDTO<Void> sendPasswordTokenEmail(String email, TokenType type, int expiryMinutes) {
+        log.info("email: {}", email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ユーザーが見つかりません"));
+        passwordResetTokenRepository.deleteByUser(user);
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(expiryMinutes))
+                .build();
+        passwordResetTokenRepository.save(resetToken);
 
-    // @Override
-    // public ResponseDTO<Void> sendResetPasswordEmail(String email) {
-    // Optional<User> optionalUser = userRepository.findByEmail(email);
-    // if (optionalUser.isEmpty()) {
-    // return ResponseDTO.<Void>builder()
-    // .status(HttpStatus.OK.value())
-    // .message("メールアドレスが登録されている場合、パスワード再設定用のリンクを送信しました")
-    // .build();
-    // }
-    // User user = optionalUser.get();
-    // passwordResetTokenRepository.deleteByUser(user);
-    // String token = UUID.randomUUID().toString();
-    // PasswordResetToken resetToken = PasswordResetToken.builder()
-    // .token(token)
-    // .user(user)
-    // .expiryDate(LocalDateTime.now().plusMinutes(15))
-    // .build();
-    // passwordResetTokenRepository.save(resetToken);
-    // String resetLink = "http://localhost:5173/reset-password?token=" + token;
-    // sendEmail(user.getEmail(), resetLink);
-    // return ResponseDTO.<Void>builder()
-    // .status(HttpStatus.OK.value())
-    // .message("メールアドレスが登録されている場合、パスワード再設定用のリンクを送信しました")
-    // .build();
-    // }
+        String link;
+        if (type == TokenType.CREATE_PASSWORD) {
+            link = "http://localhost:5173/create-password?token=" + token;
+        } else {
+            link = "http://localhost:5173/reset-password?token=" + token;
+        }
+        sendEmail(user.getEmail(), link);
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("メールアドレスが登録されている場合、パスワード再設定用のリンクを送信しました")
+                .build();
+    }
 
-    // @Override
-    // public ResponseDTO<Void> resetPassword(String token, String newPassword) {
+    @Override
+    public ResponseDTO<Void> resetPassword(String token, String newPassword) {
 
-    // PasswordResetToken resetToken =
-    // passwordResetTokenRepository.findByToken(token)
-    // .orElseThrow(() -> new RuntimeException("無効なトークンです"));
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("無効なトークンです"));
 
-    // if (resetToken.isExpired()) {
-    // return ResponseDTO.<Void>builder()
-    // .status(HttpStatus.BAD_REQUEST.value())
-    // .message("トークンの有効期限が切れています")
-    // .build();
-    // }
+        if (resetToken.isExpired()) {
+            return ResponseDTO.<Void>builder()
+                    .status(HttpStatus.BAD_REQUEST.value())
+                    .message("トークンの有効期限が切れています")
+                    .build();
+        }
 
-    // User user = resetToken.getUser();
+        User user = resetToken.getUser();
 
-    // user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPassword(passwordEncoder.encode(newPassword));
 
-    // userRepository.save(user);
+        userRepository.save(user);
 
-    // passwordResetTokenRepository.delete(resetToken);
-    // return ResponseDTO.<Void>builder()
-    // .status(HttpStatus.OK.value())
-    // .message("パスワードの再設定が完了しました")
-    // .build();
-    // }
+        passwordResetTokenRepository.delete(resetToken);
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("パスワードの再設定が完了しました")
+                .build();
+    }
 
-    // private void sendEmail(String to, String link) {
+    private void sendEmail(String to, String link) {
 
-    // SimpleMailMessage message = new SimpleMailMessage();
-    // message.setTo(to);
-    // message.setSubject("パスワード再設定のご案内");
-    // message.setText("以下のリンクをクリックしてパスワードを再設定してください:\n" + link);
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setSubject("パスワード再設定のご案内");
+        message.setText("以下のリンクをクリックしてパスワードを再設定してください:\n" + link);
 
-    // mailSender.send(message);
-    // }
+        mailSender.send(message);
+    }
 }
