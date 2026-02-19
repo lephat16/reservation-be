@@ -9,6 +9,7 @@ import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
+import com.example.ReservationApp.entity.user.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -37,6 +38,8 @@ public interface UserService {
     ResponseDTO<UserDTO> changePassword(Long userId, ChangePasswordRequest request);
 
     ResponseDTO<List<LoginHistory>> getLoginHistory();
+
+    ResponseDTO<UserDTO> createUserByAdmin(RegisterRequestDTO registerRequestDTO, User adminUser);
 
     // spring.mail.passwordを用意し次第、また進もう
     // ResponseDTO<Void> sendResetPasswordEmail(String email);

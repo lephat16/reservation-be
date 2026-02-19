@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.ReservationApp.dto.RegisterRequestDTO;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
+import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.service.auth.UserService;
 
 import jakarta.validation.Valid;
@@ -87,6 +89,13 @@ public class UserController {
         return ResponseEntity.ok(userService.getCurrentLoggedInUser());
     }
 
+    @GetMapping("/create")
+    public ResponseEntity<ResponseDTO<UserDTO>> createUserByAdmin(
+            @Valid @RequestBody RegisterRequestDTO registerRequestDTO,
+            User adminUser) {
+        return ResponseEntity.ok(userService.createUserByAdmin(registerRequestDTO, adminUser));
+    }
+
     @PutMapping("/{id}/password")
     public ResponseEntity<ResponseDTO<UserDTO>> changePassword(
             @PathVariable Long id,
@@ -105,16 +114,17 @@ public class UserController {
 
     // @PostMapping("/forgot-password")
     // public ResponseEntity<ResponseDTO<Void>> forgotPassword(
-    //         @Valid @RequestBody ForgotPasswordDTO dto) {
+    // @Valid @RequestBody ForgotPasswordDTO dto) {
 
-    //     return ResponseEntity.ok(userService.sendResetPasswordEmail(dto.getEmail()));
+    // return ResponseEntity.ok(userService.sendResetPasswordEmail(dto.getEmail()));
     // }
 
     // @PostMapping("/reset-password")
     // public ResponseEntity<ResponseDTO<Void>> resetPassword(
-    //         @Valid @RequestBody ResetPasswordDTO dto) {
+    // @Valid @RequestBody ResetPasswordDTO dto) {
 
-    //     return ResponseEntity.ok(userService.resetPassword(dto.getToken(), dto.getNewPassword()));
+    // return ResponseEntity.ok(userService.resetPassword(dto.getToken(),
+    // dto.getNewPassword()));
     // }
 
 }

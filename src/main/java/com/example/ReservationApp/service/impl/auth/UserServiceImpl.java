@@ -186,6 +186,39 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public ResponseDTO<UserDTO> createUserByAdmin(RegisterRequestDTO request, User adminUser) {
+
+        if (adminUser.getRole() != UserRole.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "管理者のみユーザーを作成できます");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AlreadyExistException("メールアドレスはすでに存在しています");
+        }
+        User userToSave = User.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phoneNumber(request.getPhoneNumber())
+                .role(request.getRole() != null ? request.getRole() : UserRole.STAFF)
+                .build();
+
+        String prefix = switch (userToSave.getRole()) {
+            case STAFF -> "STA";
+            case ADMIN -> "ADM";
+            case WAREHOUSE -> "WAH";
+        };
+
+        userToSave.setUserId(IdGeneratorUtil.generateUserId(entityManager, prefix));
+        userRepository.save(userToSave);
+
+        return ResponseDTO.<UserDTO>builder()
+                .status(HttpStatus.OK.value())
+                .message("ユーザーの登録に成功しました")
+                .data(userMapper.toDTO(userToSave))
+                .build();
+    }
+
     /**
      * 全ユーザーを取得。
      *

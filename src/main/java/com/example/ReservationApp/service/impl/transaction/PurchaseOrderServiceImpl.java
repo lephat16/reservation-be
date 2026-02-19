@@ -17,11 +17,12 @@ import com.example.ReservationApp.dto.transaction.PurchaseOrderDTO;
 import com.example.ReservationApp.dto.transaction.PurchaseOrderDetailDTO;
 import com.example.ReservationApp.entity.product.Product;
 import com.example.ReservationApp.entity.supplier.Supplier;
+import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.enums.OrderStatus;
-import com.example.ReservationApp.enums.ProductStatus;
+import com.example.ReservationApp.enums.SupplierProductStatus;
 import com.example.ReservationApp.enums.UserRole;
 import com.example.ReservationApp.exception.InvalidActionException;
 import com.example.ReservationApp.exception.NotFoundException;
@@ -29,6 +30,7 @@ import com.example.ReservationApp.exception.UnauthorizedException;
 import com.example.ReservationApp.mapper.PurchaseOrderDetailMapper;
 import com.example.ReservationApp.mapper.PurchaseOrderMapper;
 import com.example.ReservationApp.repository.product.ProductRepository;
+import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
@@ -63,6 +65,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         private final PurchaseOrderDetailMapper poDetailMapper;
         private final PurchaseOrderDetailService poDetailService;
         private final ProductRepository productRepository;
+        private final SupplierProductRepository supplierProductRepository;
 
         /**
          * 購入注文を新規作成する。
@@ -104,7 +107,10 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 for (PurchaseOrderDetailDTO detailDTO : purchaseOrderDTO.getDetails()) {
                         Product product = productRepository.findById(detailDTO.getProductId())
                                         .orElseThrow(() -> new NotFoundException("この商品は存在していません"));
-                        if (product.getStatus() == ProductStatus.INACTIVE) {
+                        SupplierProduct supplierProduct = supplierProductRepository
+                                        .findByProductIdAndSupplierId(product.getId(), supplier.getId())
+                                        .orElseThrow(() -> new NotFoundException("この仕入先はこの商品を取り扱っていません"));
+                        if (supplierProduct.getStatus() == SupplierProductStatus.INACTIVE) {
                                 throw new IllegalStateException("この商品は現在購入できません");
                         }
                         PurchaseOrderDetail existing = detailMap.get(product.getId());
