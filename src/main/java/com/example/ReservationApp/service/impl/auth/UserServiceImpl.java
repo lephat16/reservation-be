@@ -570,13 +570,13 @@ public class UserServiceImpl implements UserService {
     public ResponseDTO<Void> resetPassword(String token, String newPassword) {
 
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("無効なトークンです"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "無効なトークンです"));
 
-        if (resetToken.isExpired()) {
-            return ResponseDTO.<Void>builder()
-                    .status(HttpStatus.BAD_REQUEST.value())
-                    .message("トークンの有効期限が切れています")
-                    .build();
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "トークンの有効期限が切れています");
         }
 
         User user = resetToken.getUser();
@@ -589,6 +589,22 @@ public class UserServiceImpl implements UserService {
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
                 .message("パスワードの再設定が完了しました")
+                .build();
+    }
+
+    @Override
+    public ResponseDTO<Void> verifySetPasswordToken(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "無効なトークンです"));
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "トークンの有効期限が切れています");
+        }
+        ;
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("トークンは有効です")
                 .build();
     }
 

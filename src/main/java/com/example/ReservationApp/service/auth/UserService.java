@@ -50,4 +50,6 @@ public interface UserService {
 
     ResponseDTO<Void> resetPassword(String token, String newPassword);
 
+    ResponseDTO<Void> verifySetPasswordToken(String token);
+
 }

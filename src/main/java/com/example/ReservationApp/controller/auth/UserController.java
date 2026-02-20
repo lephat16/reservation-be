@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.ReservationApp.dto.ResponseDTO;
@@ -130,21 +131,17 @@ public class UserController {
         return ResponseEntity.ok(userService.createPassword(request));
     }
 
-    // spring.mail.passwordを用意し次第、また進もう
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResponseDTO<Void>> resetPassword(
+            @Valid @RequestBody CreatePasswordDTO dto) {
 
-    // @PostMapping("/forgot-password")
-    // public ResponseEntity<ResponseDTO<Void>> forgotPassword(
-    // @Valid @RequestBody ForgotPasswordDTO dto) {
+        return ResponseEntity.ok(userService.resetPassword(dto.getToken(),
+                dto.getPassword()));
+    }
 
-    // return ResponseEntity.ok(userService.sendResetPasswordEmail(dto.getEmail()));
-    // }
+    @GetMapping("/verify-reset-token")
+    public ResponseEntity<ResponseDTO<Void>> verifySetPasswordToken(@RequestParam String token) {
 
-    // @PostMapping("/reset-password")
-    // public ResponseEntity<ResponseDTO<Void>> resetPassword(
-    // @Valid @RequestBody ResetPasswordDTO dto) {
-
-    // return ResponseEntity.ok(userService.resetPassword(dto.getToken(),
-    // dto.getNewPassword()));
-    // }
-
+        return ResponseEntity.ok(userService.verifySetPasswordToken(token));
+    }
 }
