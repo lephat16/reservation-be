@@ -189,4 +189,13 @@ public class GlobalExceptionHandler {
 
                 return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
         }
+        @ExceptionHandler(InvalidRefreshTokenException.class)
+        public ResponseEntity<ResponseDTO<Void>> InvalidRefreshTokenException(InvalidRefreshTokenException ex) {
+                ResponseDTO<Void> responseDTO = ResponseDTO.<Void>builder()
+                                .status(HttpStatus.UNAUTHORIZED.value())
+                                .message(ex.getMessage())
+                                .build();
+
+                return new ResponseEntity<>(responseDTO, HttpStatus.UNAUTHORIZED);
+        }
 }

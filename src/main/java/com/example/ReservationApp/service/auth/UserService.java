@@ -10,6 +10,7 @@ import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.CreatePasswordDTO;
 import com.example.ReservationApp.dto.user.CreateUserDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
+import com.example.ReservationApp.dto.user.UserSessionDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.entity.user.TokenType;
 import com.example.ReservationApp.security.AuthUser;
@@ -51,5 +52,11 @@ public interface UserService {
     ResponseDTO<Void> resetPassword(String token, String newPassword);
 
     ResponseDTO<Void> verifySetPasswordToken(String token);
+
+    ResponseDTO<List<UserSessionDTO>> getUserSessions(Long id, String accessToken);
+
+    ResponseDTO<Void> revokeSession(Long id);
+
+    ResponseDTO<Void> revokeAllSessions(Long userId);
 
 }

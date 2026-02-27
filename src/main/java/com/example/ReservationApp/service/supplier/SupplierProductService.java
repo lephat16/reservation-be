@@ -13,7 +13,7 @@ public interface SupplierProductService {
 
     ResponseDTO<List<SupplierProductDTO>> getProductsBySupplier(Long supplierId);
 
-    ResponseDTO<SupplierProductDTO> updateSupplierProduct(Long spId, SupplierProductDTO spDTO);
+    ResponseDTO<SupplierProductDTO> updateSupplierProduct(String sku, SupplierProductDTO spDTO);
 
     ResponseDTO<Void> deleteSupplierProduct(Long spId);
 

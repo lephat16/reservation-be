@@ -2,7 +2,11 @@ package com.example.ReservationApp.entity.user;
 
 import java.time.LocalDateTime;
 
+import com.example.ReservationApp.enums.LoginStatus;
+
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,5 +28,7 @@ public class LoginHistory {
     private LocalDateTime loginTime;
     private String ipAddress;
     private String userAgent;
-    private String status;
+    
+    @Enumerated(EnumType.STRING)
+    private LoginStatus status;
 }

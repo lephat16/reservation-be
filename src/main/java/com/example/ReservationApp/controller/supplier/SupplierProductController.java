@@ -51,12 +51,12 @@ public class SupplierProductController {
                                 .ok(supplierProductService.getProductsBySkuWithPriceHistory(sku));
         }
 
-        @PutMapping("/{spId}")
+        @PutMapping("/{sku}")
         public ResponseEntity<ResponseDTO<SupplierProductDTO>> updateSupplierProduct(
-                        @PathVariable Long spId,
+                        @PathVariable String sku,
                         @RequestBody @Valid SupplierProductDTO spDTO) {
                 return ResponseEntity
-                                .ok(supplierProductService.updateSupplierProduct(spId, spDTO));
+                                .ok(supplierProductService.updateSupplierProduct(sku, spDTO));
         }
 
         @GetMapping("/price-histories")

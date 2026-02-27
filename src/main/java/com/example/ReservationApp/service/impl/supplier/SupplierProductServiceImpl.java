@@ -182,8 +182,8 @@ public class SupplierProductServiceImpl implements SupplierProductService {
          * @throws AlreadyExistException 商品が無効化されている場合、またはSKUが重複する場合
          */
         @Override
-        public ResponseDTO<SupplierProductDTO> updateSupplierProduct(Long spId, SupplierProductDTO spDTO) {
-                SupplierProduct existingSp = supplierProductRepository.findById(spId)
+        public ResponseDTO<SupplierProductDTO> updateSupplierProduct(String sku, SupplierProductDTO spDTO) {
+                SupplierProduct existingSp = supplierProductRepository.findBySupplierSku(sku)
                                 .orElseThrow(() -> new NotFoundException("この仕入れ商品は存在していません"));
 
                 if (spDTO.getStatus() != null) {

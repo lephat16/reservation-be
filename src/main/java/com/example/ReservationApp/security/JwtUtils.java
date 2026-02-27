@@ -2,15 +2,12 @@ package com.example.ReservationApp.security;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -26,14 +23,7 @@ public class JwtUtils {
 
     /** JWTトークンの有効期限（ミリ秒単位） */
     private static final long EXPIRATION_TIME_IN_MILLISEC = 1000L * 60L * 60L;
-    // private static final long EXPIRATION_TIME_IN_MILLISEC = 1000L * 5L;
     private static final long REFRESH_EXPIRATION_TIME = 1000L * 60L * 60L * 24L * 7L;
-
-    private final StringRedisTemplate redisTemplate;
-
-    public JwtUtils(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
 
     private SecretKey key;
     /** application.propertiesから注入されるJWTシークレット文字列 */
@@ -56,31 +46,38 @@ public class JwtUtils {
      * @param email トークンに埋め込むメールアドレス
      * @return 生成されたJWTトークン
      */
-    public String generateToken(String email) {
+    public String generateToken(String email, Long sessionId) {
 
         return Jwts.builder()
                 .subject(email)
+                .claim("sessionId", sessionId)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME_IN_MILLISEC))
                 .signWith(key)
                 .compact();
     }
 
-    public String generateRefreshToken(String email) {
+    public String generateRefreshToken(String email, Long sessionId) {
 
         String refreshToken = Jwts.builder()
                 .subject(email)
+                .claim("sessionId", sessionId)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + REFRESH_EXPIRATION_TIME))
                 .signWith(key)
                 .compact();
-        redisTemplate.opsForValue().set(
-                "refresh_token:" + email, // overwrite data,
-                Objects.requireNonNull(refreshToken),
-                REFRESH_EXPIRATION_TIME,
-                TimeUnit.MILLISECONDS);
-
         return refreshToken;
+    }
+
+    public Long extractSessionId(String token) {
+        Claims claims = parseClaims(token);
+        Object sessionId = claims.get("sessionId");
+        if (sessionId instanceof Integer) {
+            return ((Integer) sessionId).longValue();
+        } else if (sessionId instanceof Long) {
+            return (Long) sessionId;
+        }
+        throw new RuntimeException("SessionId not found in token");
     }
 
     /**
@@ -143,34 +140,22 @@ public class JwtUtils {
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    public String refreshAccessToken(String email, String refreshToken) {
-        Claims claims;
+    public Claims parseClaims(String token) {
         try {
-            claims = Jwts.parser()
+            return Jwts.parser()
                     .verifyWith(key)
                     .build()
-                    .parseSignedClaims(refreshToken)
+                    .parseSignedClaims(token)
                     .getPayload();
         } catch (Exception e) {
-            throw new RuntimeException("不正なリフレッシュトークンです。署名の検証に失敗しました");
+            throw new RuntimeException("不正なリフレッシュトークン");
         }
+    }
 
-        Date expiration = claims.getExpiration();
-        if (expiration.before(new Date())) {
+    public String extractUsernameIfNotExpired(String token) {
+        Claims claims = parseClaims(token);
+        if (claims.getExpiration().before(new Date()))
             throw new RuntimeException("リフレッシュトークンの有効期限が切れています");
-        }
-
-        String storedRefreshToken = redisTemplate.opsForValue().get("refresh_token:" + email);
-
-        if (storedRefreshToken == null || !storedRefreshToken.equals(refreshToken)) {
-            throw new RuntimeException("無効または期限切れのリフレッシュトークン");
-        }
-
-        return generateToken(email);
+        return claims.getSubject();
     }
-
-    public void revokeRefreshToken(String email) {
-        redisTemplate.delete("refresh_token:" + email);
-    }
-
 }

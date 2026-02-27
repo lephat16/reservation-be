@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,11 +22,14 @@ import com.example.ReservationApp.dto.user.CreatePasswordDTO;
 import com.example.ReservationApp.dto.user.CreateUserDTO;
 import com.example.ReservationApp.dto.user.ResendPasswordDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
+import com.example.ReservationApp.dto.user.UserSessionDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.entity.user.TokenType;
 import com.example.ReservationApp.security.AuthUser;
 import com.example.ReservationApp.service.auth.UserService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -144,4 +148,28 @@ public class UserController {
 
         return ResponseEntity.ok(userService.verifySetPasswordToken(token));
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{id}/sessions")
+    public ResponseEntity<ResponseDTO<List<UserSessionDTO>>> getUserSessions(
+            @PathVariable Long id,
+            @CookieValue(value = "accessToken", required = false) String accessToken) {
+
+        return ResponseEntity.ok(userService.getUserSessions(id, accessToken));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/sessions/{sessionId}/revoke")
+    public ResponseEntity<ResponseDTO<Void>> revokeSession(@PathVariable Long sessionId) {
+
+        return ResponseEntity.ok(userService.revokeSession(sessionId));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{userId}/sessions/revoke-all")
+    public ResponseEntity<ResponseDTO<Void>> revokeAllSessions(@PathVariable Long userId) {
+
+        return ResponseEntity.ok(userService.revokeAllSessions(userId));
+    }
+
 }

@@ -7,6 +7,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -76,8 +77,11 @@ public class SecurityConfig {
         @Bean
         @Order(2)
         public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-                httpSecurity.csrf(csrf -> csrf.disable())
+                httpSecurity.securityMatcher("/api/**")
+                                .csrf(csrf -> csrf.disable())
                                 .cors(Customizer.withDefaults())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .exceptionHandling(exception -> exception
                                                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                                                 .accessDeniedHandler(customAccessDenialHandler))
@@ -89,8 +93,9 @@ public class SecurityConfig {
                                                                 "/api/users/send-reset-password")
                                                 .permitAll()
                                                 .anyRequest().authenticated())
-                                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class)
-                                .securityMatcher("/api/**");
+                                .addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class);
+                // .securityMatcher("/api/**");
+
                 return httpSecurity.build();
         }
 

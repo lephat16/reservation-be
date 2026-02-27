@@ -2,8 +2,10 @@ package com.example.ReservationApp.service.impl.auth;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
@@ -24,11 +26,15 @@ import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.CreatePasswordDTO;
 import com.example.ReservationApp.dto.user.CreateUserDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
+import com.example.ReservationApp.dto.user.UserSessionDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.entity.user.PasswordResetToken;
 import com.example.ReservationApp.entity.user.TokenType;
 import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.entity.user.UserSession;
+import com.example.ReservationApp.enums.LoginStatus;
+import com.example.ReservationApp.enums.RevokedReason;
+import com.example.ReservationApp.enums.SessionStatus;
 import com.example.ReservationApp.enums.UserRole;
 import com.example.ReservationApp.exception.InvalidCredentialException;
 import com.example.ReservationApp.exception.NotFoundException;
@@ -36,6 +42,7 @@ import com.example.ReservationApp.exception.AlreadyExistException;
 import com.example.ReservationApp.exception.BadRequestException;
 import com.example.ReservationApp.generator.IdGeneratorUtil;
 import com.example.ReservationApp.mapper.UserMapper;
+import com.example.ReservationApp.mapper.UserSessionMapper;
 import com.example.ReservationApp.repository.user.LoginHistoryRepository;
 import com.example.ReservationApp.repository.user.PasswordResetTokenRepository;
 import com.example.ReservationApp.repository.user.UserRepository;
@@ -43,6 +50,7 @@ import com.example.ReservationApp.repository.user.UserSessionRepository;
 import com.example.ReservationApp.security.AuthUser;
 import com.example.ReservationApp.security.JwtUtils;
 import com.example.ReservationApp.service.auth.UserService;
+import com.example.ReservationApp.util.UserAgentParser;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -71,10 +79,14 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final UserMapper userMapper;
+    private final UserSessionMapper userSessionMapper;
     private final LoginHistoryRepository loginHistoryRepository;
     private final UserSessionRepository userSessionRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final JavaMailSender mailSender;
+
+    @Value("${frontend.url}")
+    private String frontendUrl;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -95,39 +107,43 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException("メールアドレスが見つかりません"));
 
         if (!passwordEncoder.matches(loginRequestDTO.getPassword(), user.getPassword())) {
-            saveLoginHistory(user, request, "FAILED");
+            saveLoginHistory(user, request, LoginStatus.FAILED);
             throw new InvalidCredentialException("パスワードは間違っています");
         }
 
         log.info("{}", user.getRole());
-        saveLoginHistory(user, request, "SUCCESS");
-        String accessToken = jwtUtils.generateToken(user.getEmail());
-        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail());
+        saveLoginHistory(user, request, LoginStatus.SUCCESS);
+
         UserSession session = new UserSession();
         session.setUser(user);
-        session.setRefreshToken(refreshToken);
         session.setIpAddress(request.getRemoteAddr());
         session.setUserAgent(request.getHeader("User-Agent"));
         session.setExpiry(LocalDateTime.now().plusDays(7));
+        session.setCreatedAt(LocalDateTime.now());
         session.setRevoked(false);
-        userSessionRepository.save(session);
 
+        session = userSessionRepository.save(session);
         boolean remember = loginRequestDTO.isRemember();
-
+        String accessToken = jwtUtils.generateToken(user.getEmail(), session.getId());
         Cookie accessCookie = new Cookie("accessToken", accessToken);
         accessCookie.setHttpOnly(true);
         accessCookie.setSecure(false);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(60 * 15);
-        accessCookie.setAttribute("SameSite", "Strict");
+        accessCookie.setAttribute("SameSite", "Lax");
         response.addCookie(accessCookie);
+
+        String refreshToken = jwtUtils.generateRefreshToken(user.getEmail(), session.getId());
+
+        session.setRefreshToken(refreshToken);
+        userSessionRepository.save(session);
 
         Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(remember ? 7 * 24 * 60 * 60 : -1);
-        refreshCookie.setAttribute("SameSite", "Strict");
+        refreshCookie.setAttribute("SameSite", "Lax");
         response.addCookie(refreshCookie);
 
         UserDTO userDTO = userMapper.toDTO(user);
@@ -283,7 +299,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseDTO<UserDTO> updateUser(Long id, UserDTO userDTO) {
 
-        User existingUser = userRepository.findById(id).orElseThrow(() -> new NotFoundException(id + "ユーザーを見つかりません"));
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(id + "ユーザーを見つかりません"));
 
         if (userDTO.getName() != null && !userDTO.getName().isBlank()) {
             existingUser.setName(userDTO.getName());
@@ -314,8 +331,12 @@ public class UserServiceImpl implements UserService {
      * @param id 削除するユーザーのID
      * @return 削除結果を含むResponseDTO
      */
+    @Transactional
     @Override
     public ResponseDTO<Void> deleteUser(Long id) {
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(id + "ユーザーを見つかりません"));
+        passwordResetTokenRepository.deleteByUser(existingUser);
         userRepository.deleteById(id);
 
         return ResponseDTO.<Void>builder()
@@ -382,6 +403,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public ResponseDTO<Void> refresh(HttpServletResponse response, String refreshToken) {
 
+        // リフレッシュトークンが無い場合は401返却
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseDTO.<Void>builder()
                     .status(HttpStatus.UNAUTHORIZED.value())
@@ -389,21 +411,46 @@ public class UserServiceImpl implements UserService {
                     .build();
         }
         try {
-            UserSession session = userSessionRepository.findByRefreshToken(refreshToken)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "セッションが無効です。再ログインしてください"));
-            if (session.isRevoked() || session.getExpiry().isBefore(LocalDateTime.now())) {
+            // トークンからメールアドレスを取得（期限内チェック）
+            String email = jwtUtils.extractUsernameIfNotExpired(refreshToken);
+            // 旧セッション取得 + 無効化・期限切れチェック
+            UserSession oldSession = userSessionRepository.findByRefreshToken(refreshToken)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "無効なリフレッシュトークン"));
+            // チェック revoked + expiry
+            if (oldSession.isRevoked() || oldSession.getExpiry().isBefore(LocalDateTime.now())) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "セッションが無効です。再ログインしてください");
             }
-            User user = session.getUser();
+            User user = oldSession.getUser();
+            // 旧セッションを無効化
+            oldSession.setRevoked(true);
+            oldSession.setRevokedAt(LocalDateTime.now());
+            oldSession.setRevokedReason(RevokedReason.ROTATED);
+            userSessionRepository.save(oldSession);
+            // 新しいセッション作成（まずrefreshToken空で保存）
+            UserSession newSession = UserSession.builder()
+                    .user(user)
+                    .refreshToken("")
+                    .ipAddress(oldSession.getIpAddress())
+                    .userAgent(oldSession.getUserAgent())
+                    .createdAt(LocalDateTime.now())
+                    .expiry(LocalDateTime.now().plusDays(7))
+                    .revoked(false)
+                    .build();
+            userSessionRepository.save(newSession);
+            // 新しいアクセストークンとリフレッシュトークンを生成
+            String newAccessToken = jwtUtils.generateToken(email, newSession.getId());
+            String newRefreshToken = jwtUtils.generateRefreshToken(email, newSession.getId());
 
-            String newAccessToken = jwtUtils.refreshAccessToken(user.getEmail(), refreshToken);
-            String newRefreshToken = jwtUtils.generateRefreshToken(user.getEmail());
-
+            // 生成したリフレッシュトークンを新セッションに設定して更新
+            newSession.setRefreshToken(newRefreshToken);
+            userSessionRepository.save(newSession);
+            // Cookieに設定
             Cookie accessCookie = new Cookie("accessToken", newAccessToken);
             accessCookie.setHttpOnly(true);
             accessCookie.setSecure(false);
             accessCookie.setPath("/");
             accessCookie.setMaxAge(60 * 15);
+            accessCookie.setAttribute("SameSite", "Lax");
             response.addCookie(accessCookie);
 
             Cookie refreshCookie = new Cookie("refreshToken", newRefreshToken);
@@ -411,6 +458,7 @@ public class UserServiceImpl implements UserService {
             refreshCookie.setSecure(false);
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(7 * 24 * 60 * 60);
+            refreshCookie.setAttribute("SameSite", "Lax");
             response.addCookie(refreshCookie);
 
             return ResponseDTO.<Void>builder()
@@ -443,8 +491,12 @@ public class UserServiceImpl implements UserService {
 
         if (refreshToken != null && !refreshToken.isBlank()) {
             userSessionRepository.findByRefreshToken(refreshToken).ifPresent(session -> {
-                session.setRevoked(true);
-                userSessionRepository.save(session);
+                if (!session.isRevoked()) {
+                    session.setRevoked(true);
+                    session.setRevokedAt(LocalDateTime.now());
+                    session.setRevokedReason(RevokedReason.USER_LOGOUT);
+                    userSessionRepository.save(session);
+                }
             });
         }
         Cookie accessCookie = new Cookie("accessToken", null);
@@ -452,12 +504,14 @@ public class UserServiceImpl implements UserService {
         accessCookie.setSecure(false);
         accessCookie.setPath("/");
         accessCookie.setMaxAge(0);
+        accessCookie.setAttribute("SameSite", "Strict");
 
         Cookie refreshCookie = new Cookie("refreshToken", null);
         refreshCookie.setHttpOnly(true);
         refreshCookie.setSecure(false);
         refreshCookie.setPath("/");
         refreshCookie.setMaxAge(0);
+        accessCookie.setAttribute("SameSite", "Strict");
 
         response.addCookie(accessCookie);
         response.addCookie(refreshCookie);
@@ -493,20 +547,37 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    /**
+     * パスワード作成／リセット処理
+     *
+     * クライアントから送信されたトークンとパスワードを受け取り、
+     * トークンの有効性を確認後、ユーザーのパスワードを更新する。
+     * 更新後、トークンは削除されるため、同じトークンは再利用不可。
+     *
+     * @param request CreatePasswordDTO（token と新しい password を含む）
+     * @return パスワード設定結果を含む ResponseDTO
+     */
     @Transactional
     @Override
     public ResponseDTO<Void> createPassword(CreatePasswordDTO request) {
 
+        // トークンをデータベースから取得
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(request.getToken())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "無効なトークンです"));
+
+        // トークンの有効期限をチェック
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "トークンの有効期限が切れています");
         }
+
+        // パスワードをハッシュ化して更新
         User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
+
+        // 使用済みトークンを削除
         passwordResetTokenRepository.delete(resetToken);
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
@@ -514,7 +585,17 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    public void saveLoginHistory(User user, HttpServletRequest request, String status) {
+    /**
+     * ログイン履歴を保存する処理
+     *
+     * ユーザーのログイン時に、IPアドレス・User-Agent・ステータスを
+     * LoginHistoryテーブルに保存する。
+     *
+     * @param user    ログインしたユーザー
+     * @param request HttpServletRequest（IPアドレスやUser-Agent取得に使用）
+     * @param status  ログイン成功／失敗などのステータス
+     */
+    public void saveLoginHistory(User user, HttpServletRequest request, LoginStatus status) {
 
         LoginHistory history = new LoginHistory();
         history.setUserId(user.getUserId());
@@ -526,6 +607,14 @@ public class UserServiceImpl implements UserService {
         loginHistoryRepository.save(history);
     }
 
+    /**
+     * 現在ログイン中のユーザーのログイン履歴を取得
+     *
+     * データベースからユーザーIDに紐づくログイン履歴を取得し、
+     * 登録日時の降順で返す。
+     *
+     * @return ログイン履歴リストを含む ResponseDTO
+     */
     @Override
     public ResponseDTO<List<LoginHistory>> getLoginHistory() {
 
@@ -539,52 +628,96 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    /**
+     * パスワードリセット／アカウント作成用のメール送信処理
+     *
+     * 指定されたメールアドレスに対して、パスワードリセット用または
+     * アカウント作成用のトークンを生成し、データベースに保存した後、
+     * メールでリンクを送信する。
+     *
+     * 存在しないメールアドレスの場合でも、セキュリティ上の理由から
+     * 成功メッセージを返し、メールの存在有無を判定できないようにする。
+     *
+     * @param email         送信対象のユーザーのメールアドレス
+     * @param type          トークンの種類（CREATE_PASSWORD または RESET_PASSWORD）
+     * @param expiryMinutes トークンの有効期限（分単位）
+     * @return メール送信処理の結果を含む ResponseDTO
+     */
     @Override
+    @Transactional
     public ResponseDTO<Void> sendPasswordTokenEmail(String email, TokenType type, int expiryMinutes) {
         log.info("email: {}", email);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ユーザーが見つかりません"));
+        // メールアドレスからユーザーを取得
+        Optional<User> optionalUser = userRepository.findByEmail(email);
+        // ユーザーが存在しない場合でもセキュリティ上の理由で成功メッセージを返す
+        if (optionalUser.isEmpty()) {
+            return ResponseDTO.<Void>builder()
+                    .status(HttpStatus.OK.value())
+                    .message("メールアドレスが登録されている場合、リンクを送信しました")
+                    .build();
+        }
+
+        User user = optionalUser.get();
+        // 既存のパスワードリセットトークンを削除（古いトークンを無効化）
         passwordResetTokenRepository.deleteByUser(user);
         String token = UUID.randomUUID().toString();
+
+        // PasswordResetTokenエンティティを作成し、有効期限を設定
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .token(token)
                 .user(user)
-                .expiryDate(LocalDateTime.now().plusMinutes(expiryMinutes))
+                .expiryDate(LocalDateTime.now().plusMinutes(expiryMinutes)) // 有効期限
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
-        String link;
+        // 送信するリンクとメッセージを準備
+        String link, message;
         if (type == TokenType.CREATE_PASSWORD) {
-            link = "http://localhost:5173/create-password?token=" + token;
+            link = frontendUrl + "/create-password?token=" + token;
+            message = "アカウント作成用のリンクを送信しました";
         } else {
-            link = "http://localhost:5173/reset-password?token=" + token;
+            link = frontendUrl + "/reset-password?token=" + token;
+            message = "パスワード再設定用のリンクを送信しました";
         }
         sendEmail(user.getEmail(), link);
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
-                .message("メールアドレスが登録されている場合、パスワード再設定用のリンクを送信しました")
+                .message(message)
                 .build();
     }
 
+    /**
+     * パスワード再設定処理
+     *
+     * クライアントから送信されたトークンと新しいパスワードを受け取り、
+     * トークンの有効性を確認後、ユーザーのパスワードを更新する。
+     * 更新後、使用済みトークンは削除されるため再利用不可。
+     *
+     * @param token       パスワードリセット用トークン
+     * @param newPassword 新しいパスワード
+     * @return パスワード再設定結果を含む ResponseDTO
+     */
     @Override
     public ResponseDTO<Void> resetPassword(String token, String newPassword) {
 
+        // トークンをデータベースから取得
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "無効なトークンです"));
 
+        // トークンの有効期限をチェック
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "トークンの有効期限が切れています");
         }
 
+        // パスワードをハッシュ化して更新
         User user = resetToken.getUser();
-
         user.setPassword(passwordEncoder.encode(newPassword));
-
         userRepository.save(user);
 
+        // 使用済みトークンを削除
         passwordResetTokenRepository.delete(resetToken);
         return ResponseDTO.<Void>builder()
                 .status(HttpStatus.OK.value())
@@ -592,10 +725,19 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    /**
+     * パスワード設定用トークンの有効性検証
+     *
+     * トークンが存在するか、かつ有効期限内であるかを確認する。
+     *
+     * @param token パスワードリセット用トークン
+     * @return トークン検証結果を含む ResponseDTO
+     */
     @Override
     public ResponseDTO<Void> verifySetPasswordToken(String token) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "無効なトークンです"));
+        // トークンの有効期限をチェック
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
@@ -608,6 +750,14 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    /**
+     * パスワード再設定メール送信処理
+     *
+     * 指定されたメールアドレス宛に、パスワード再設定用リンクを送信する。
+     *
+     * @param to   メール送信先アドレス
+     * @param link パスワード再設定用リンク
+     */
     private void sendEmail(String to, String link) {
 
         SimpleMailMessage message = new SimpleMailMessage();
@@ -616,5 +766,97 @@ public class UserServiceImpl implements UserService {
         message.setText("以下のリンクをクリックしてパスワードを再設定してください:\n" + link);
 
         mailSender.send(message);
+    }
+
+    /**
+     * 指定されたユーザーIDのセッション一覧を取得する。
+     * 現在のセッションも判定してDTOに設定する。
+     *
+     * @param id          ユーザーID
+     * @param accessToken 現在のアクセスToken（どのセッションか判定用）
+     * @return UserSessionDTOのリストを含むResponseDTO
+     */
+    @Override
+    public ResponseDTO<List<UserSessionDTO>> getUserSessions(Long id, String accessToken) {
+
+        if (!userRepository.existsById(id)) {
+            throw new NotFoundException(id + "のユーザーを見つかりません");
+        }
+        // 現在のセッションIDを取得
+        Long currentSessionid = jwtUtils.extractSessionId(accessToken);
+        List<UserSession> sessions = userSessionRepository.findTop10ByUserIdOrderByCreatedAtDesc(id);
+        // DTOに変換し、状態とデバイス情報を設定
+        List<UserSessionDTO> sessionDTOs = sessions.stream()
+                .map(session -> {
+                    UserSessionDTO dto = userSessionMapper.toDTO(session);
+                    // セッション状態を判定（ACTIVE / REVOKED / EXPIRED
+                    dto.setStatus(!session.isRevoked() && session.getExpiry().isAfter(LocalDateTime.now())
+                            ? SessionStatus.ACTIVE
+                            : session.isRevoked() ? SessionStatus.REVOKED : SessionStatus.EXPIRED);
+                    dto.setDevice(UserAgentParser.formatDeviceInfo(session.getUserAgent()));
+                    dto.setCurrentSession(session.getId().equals(currentSessionid));
+                    return dto;
+                })
+                .toList();
+        return ResponseDTO.<List<UserSessionDTO>>builder()
+                .status(HttpStatus.OK.value())
+                .message("セッション一覧を取得しました")
+                .data(sessionDTOs)
+                .build();
+    }
+
+    /**
+     * 指定されたセッションIDを無効化する。
+     * 管理者操作用。
+     *
+     * @param sessionId 無効化するセッションID
+     * @return 処理結果を示すResponseDTO
+     */
+    @Override
+    public ResponseDTO<Void> revokeSession(Long sessionId) {
+
+        UserSession session = userSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new NotFoundException("このセッションを見つかりません"));
+        // 未無効化なら無効化
+        if (!session.isRevoked()) {
+            session.setRevoked(true);
+            session.setRevokedAt(LocalDateTime.now());
+            session.setRevokedReason(RevokedReason.ADMIN_REVOKE);
+            userSessionRepository.save(session);
+        }
+
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("セッションを無効化しました")
+                .build();
+    }
+
+    /**
+     * 指定ユーザーの全セッションを無効化する。
+     * 管理者操作用。
+     *
+     * @param userId 対象ユーザーID
+     * @return 処理結果を示すResponseDTO
+     */
+    @Override
+    public ResponseDTO<Void> revokeAllSessions(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException("このユーザーを見つかりません");
+        }
+        List<UserSession> sessions = userSessionRepository.findTop10ByUserIdOrderByCreatedAtDesc(userId);
+        // 未無効化のセッションをすべて無効化
+        for (UserSession session : sessions) {
+            if (!session.isRevoked()) {
+                session.setRevoked(true);
+                session.setRevokedAt(LocalDateTime.now());
+                session.setRevokedReason(RevokedReason.ADMIN_REVOKE);
+            }
+        }
+        userSessionRepository.saveAll(sessions);
+
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("すべてのセッションを無効化しました")
+                .build();
     }
 }

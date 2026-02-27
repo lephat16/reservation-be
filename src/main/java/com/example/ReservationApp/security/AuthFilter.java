@@ -1,6 +1,7 @@
 package com.example.ReservationApp.security;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -11,7 +12,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import io.jsonwebtoken.ExpiredJwtException;
+import com.example.ReservationApp.entity.user.UserSession;
+import com.example.ReservationApp.repository.user.UserSessionRepository;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -33,6 +36,7 @@ public class AuthFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final CustomUserDetailsService customUserDetailsService;
+    private final UserSessionRepository userSessionRepository;
 
     /**
      * HTTPリクエストごとに呼ばれるメイン処理。
@@ -52,63 +56,40 @@ public class AuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String path = request.getServletPath();
 
-        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")) {
+        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.equals("/api/auth/refresh")) {
             filterChain.doFilter(request, response);
             return;
         }
-        String token = getTokenFromCookies(request);
-        if (token != null) {
+
+        String accessToken = getTokenFromCookies(request);
+        if (accessToken != null) {
             try {
-                String email = jwtUtils.extractUsername(token);
+                String email = jwtUtils.extractUsername(accessToken);
 
                 if (StringUtils.hasText(email) && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-                    if (jwtUtils.validateToken(token, userDetails)) {
-                        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                        authenticationToken.setDetails(
-                                new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    }
-                }
-            } catch (ExpiredJwtException e) {
-                log.warn("JWT expired: {}", e.getMessage());
-                String refreshToken = getRefreshTokenFromCookies(request);
+                    if (jwtUtils.validateToken(accessToken, userDetails)) {
 
-                if (refreshToken == null) {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
-                }
-                try {
-                    String email = jwtUtils.extractUsername(refreshToken);
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-                    if (jwtUtils.validateToken(refreshToken, userDetails)) {
-                        String newAccessToken = jwtUtils.generateToken(email);
-                        Cookie newCookie = new Cookie("accessToken", newAccessToken);
-                        newCookie.setHttpOnly(true);
-                        newCookie.setSecure(false);
-                        newCookie.setPath("/");
-                        newCookie.setMaxAge(15 * 60);
-                        response.addCookie(newCookie);
+                        Long sessionId = jwtUtils.extractSessionId(accessToken);
+                        Optional<UserSession> sessionOpt = userSessionRepository.findById(sessionId);
 
-                        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                        authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                        filterChain.doFilter(request, response);
-                        return;
+                        if (sessionOpt.isEmpty() || sessionOpt.get().isRevoked()) {
+                            SecurityContextHolder.clearContext();
+                        } else {
+                            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                                    userDetails, null, userDetails.getAuthorities());
+                            authenticationToken.setDetails(
+                                    new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        }
+
                     }
-                } catch (Exception ex) {
-                    log.error("Refresh token invalid: {}", ex.getMessage());
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
                 }
             } catch (Exception e) {
-                log.error("Invalid JWT: {}", e.getMessage());
+                log.error("Invalid JWT: {}", e);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
-
         }
         try {
             filterChain.doFilter(request, response);
@@ -128,6 +109,7 @@ public class AuthFilter extends OncePerRequestFilter {
      */
     private String getTokenFromCookies(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
+
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (("accessToken".equals(cookie.getName()))) {
@@ -139,15 +121,4 @@ public class AuthFilter extends OncePerRequestFilter {
 
     }
 
-    private String getRefreshTokenFromCookies(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if ((cookies != null)) {
-            for (Cookie cookie : cookies) {
-                if ("refreshToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
-    }
 }
