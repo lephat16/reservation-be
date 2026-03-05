@@ -20,16 +20,14 @@ import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.user.CreatePasswordDTO;
 import com.example.ReservationApp.dto.user.CreateUserDTO;
+import com.example.ReservationApp.dto.user.LoginHistoryDTO;
 import com.example.ReservationApp.dto.user.ResendPasswordDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.dto.user.UserSessionDTO;
-import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.entity.user.TokenType;
 import com.example.ReservationApp.security.AuthUser;
 import com.example.ReservationApp.service.auth.UserService;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -118,7 +116,7 @@ public class UserController {
     }
 
     @GetMapping("/login-history")
-    public ResponseEntity<ResponseDTO<List<LoginHistory>>> getLoginHistory() {
+    public ResponseEntity<ResponseDTO<List<LoginHistoryDTO>>> getLoginHistory() {
 
         return ResponseEntity.ok(userService.getLoginHistory());
     }

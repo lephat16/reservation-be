@@ -49,7 +49,7 @@ public class Product {
 
     @NotBlank(message = "商品コードは必須です")
     @Size(max = 50, message = "商品コードは50文字以内で入力してください")
-    @Pattern(regexp = "^[A-Za-z0-9]+$", message = "商品コードはアルファベットと数字のみ使用できます")
+    @Pattern(regexp = "^[A-Za-z0-9\\-]+$", message = "商品コードはアルファベット、数字、ハイフンのみ使用できます")
     private String productCode;
     @Size(max = 500, message = "商品説明は500文字以内で入力してください")
     private String description;

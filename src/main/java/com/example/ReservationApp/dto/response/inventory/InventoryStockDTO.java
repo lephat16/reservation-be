@@ -23,12 +23,13 @@ public class InventoryStockDTO {
     private Long productId;
     private String productName;
     private String sku;
+    private Long warehouseId;
     private String warehouseName;
     private Integer quantity;
-    private Integer reservedQuantity ;
+    private Integer reservedQuantity;
 
     private List<StockHistoryDTO> stockHistories;
     private ProductDTO product;
     private SupplierProductDTO supplierProduct;
-    
+
 }

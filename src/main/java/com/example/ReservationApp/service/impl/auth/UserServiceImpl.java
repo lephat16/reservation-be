@@ -25,6 +25,7 @@ import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.CreatePasswordDTO;
 import com.example.ReservationApp.dto.user.CreateUserDTO;
+import com.example.ReservationApp.dto.user.LoginHistoryDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.dto.user.UserSessionDTO;
 import com.example.ReservationApp.entity.user.LoginHistory;
@@ -41,6 +42,7 @@ import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.exception.AlreadyExistException;
 import com.example.ReservationApp.exception.BadRequestException;
 import com.example.ReservationApp.generator.IdGeneratorUtil;
+import com.example.ReservationApp.mapper.LoginHistoryMapper;
 import com.example.ReservationApp.mapper.UserMapper;
 import com.example.ReservationApp.mapper.UserSessionMapper;
 import com.example.ReservationApp.repository.user.LoginHistoryRepository;
@@ -80,6 +82,7 @@ public class UserServiceImpl implements UserService {
     private final JwtUtils jwtUtils;
     private final UserMapper userMapper;
     private final UserSessionMapper userSessionMapper;
+    private final LoginHistoryMapper loginHistoryMapper;
     private final LoginHistoryRepository loginHistoryRepository;
     private final UserSessionRepository userSessionRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -616,15 +619,21 @@ public class UserServiceImpl implements UserService {
      * @return ログイン履歴リストを含む ResponseDTO
      */
     @Override
-    public ResponseDTO<List<LoginHistory>> getLoginHistory() {
+    public ResponseDTO<List<LoginHistoryDTO>> getLoginHistory() {
 
         String userId = getCurrentUserEntity().getUserId();
-        List<LoginHistory> loginHistories = loginHistoryRepository.findByUserIdOrderByLoginTimeDesc(userId);
-
-        return ResponseDTO.<List<LoginHistory>>builder()
+        List<LoginHistory> loginHistories = loginHistoryRepository.findTop50ByUserIdOrderByLoginTimeDesc(userId);
+        List<LoginHistoryDTO> loginHistoryDTOs = loginHistories.stream()
+                .map(loginHistory -> {
+                    LoginHistoryDTO loginHistoryDTO = loginHistoryMapper.toDTO(loginHistory);
+                    loginHistoryDTO.setDevice(UserAgentParser.formatDeviceInfo(loginHistory.getUserAgent()));
+                    return loginHistoryDTO;
+                })
+                .toList();
+        return ResponseDTO.<List<LoginHistoryDTO>>builder()
                 .status(HttpStatus.OK.value())
                 .message("ログイン履歴の取得に成功しました")
-                .data(loginHistories)
+                .data(loginHistoryDTOs)
                 .build();
     }
 

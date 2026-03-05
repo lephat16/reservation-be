@@ -504,15 +504,15 @@ public class ProductServiceImpl implements ProductService {
         if (!poRepository.existsById(poId)) {
             throw new NotFoundException("この注文書はは存在していません");
         }
-        List<Object[]> rows = stockHistoryRepository.sumReceivedQtyByPoGroupByProduct(poId);
+        List<Object[]> rows = stockHistoryRepository.sumReceivedQtyByPoGroupBySupplierProduct(poId);
         List<SumReceivedGroupByProductDTO> result = new ArrayList<>();
         for (Object[] row : rows) {
-            Long productId = (Long) row[0];
+            Long spId  = (Long) row[0];
             Long receivedQty = (Long) row[1];
             String sku = (String) row[2];
 
             SumReceivedGroupByProductDTO dto = SumReceivedGroupByProductDTO.builder()
-                    .productId(productId)
+                    .supplierProductId(spId )
                     .receivedQty(receivedQty)
                     .sku(sku)
                     .build();

@@ -9,9 +9,9 @@ import com.example.ReservationApp.dto.request.ChangePasswordRequest;
 import com.example.ReservationApp.dto.response.auth.LoginResponseDTO;
 import com.example.ReservationApp.dto.user.CreatePasswordDTO;
 import com.example.ReservationApp.dto.user.CreateUserDTO;
+import com.example.ReservationApp.dto.user.LoginHistoryDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.dto.user.UserSessionDTO;
-import com.example.ReservationApp.entity.user.LoginHistory;
 import com.example.ReservationApp.entity.user.TokenType;
 import com.example.ReservationApp.security.AuthUser;
 
@@ -41,7 +41,7 @@ public interface UserService {
 
     ResponseDTO<UserDTO> changePassword(Long userId, ChangePasswordRequest request);
 
-    ResponseDTO<List<LoginHistory>> getLoginHistory();
+    ResponseDTO<List<LoginHistoryDTO>> getLoginHistory();
 
     ResponseDTO<UserDTO> createUserByAdmin(CreateUserDTO request, AuthUser authUser);
 

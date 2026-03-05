@@ -2,6 +2,7 @@ package com.example.ReservationApp.repository.inventory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -13,7 +14,9 @@ import io.lettuce.core.dynamic.annotation.Param;
 
 public interface InventoryStockRepository extends JpaRepository<InventoryStock, Long> {
 
-        Optional<InventoryStock> findByProductIdAndWarehouseId(Long productId, Long warehouseId);
+        List<InventoryStock> findBySupplierProductIdInAndWarehouseIdIn(Set<Long> spIds, Set<Long> warehouseIds);
+
+        Optional<InventoryStock> findBySupplierProductIdAndWarehouseId(Long supplierProductId, Long warehouseId);
 
         @Query("""
                             SELECT DISTINCT s FROM InventoryStock s

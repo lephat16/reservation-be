@@ -15,20 +15,34 @@ import io.lettuce.core.dynamic.annotation.Param;
 
 public interface StockHistoryRepository extends JpaRepository<StockHistory, Long> {
 
+        // @Query("""
+        // SELECT
+        // sh.inventoryStock.product.id,
+        // COALESCE(SUM(sh.changeQty), 0),
+        // sp.supplierSku
+        // FROM StockHistory sh
+        // JOIN sh.inventoryStock s
+        // JOIN s.product p
+        // JOIN SupplierProduct sp ON sp.product.id = p.id
+        // WHERE sh.refType = 'PO'
+        // AND sh.refId = :poId
+        // GROUP BY sh.inventoryStock.product.id, sp.supplierSku
+        // """)
+        // List<Object[]> sumReceivedQtyByPoGroupByProduct(@Param("poId") Long poId);
+
         @Query("""
                         SELECT
-                                sh.inventoryStock.product.id,
-                                COALESCE(SUM(sh.changeQty), 0),
-                                sp.supplierSku
+                        sh.inventoryStock.supplierProduct.id,
+                        COALESCE(SUM(sh.changeQty), 0),
+                        sp.supplierSku
                         FROM StockHistory sh
                         JOIN sh.inventoryStock s
-                        JOIN s.product p
-                        JOIN SupplierProduct sp ON sp.product.id = p.id
+                        JOIN s.supplierProduct sp
                         WHERE sh.refType = 'PO'
                         AND sh.refId = :poId
-                        GROUP BY sh.inventoryStock.product.id, sp.supplierSku
+                        GROUP BY sh.inventoryStock.supplierProduct.id
                         """)
-        List<Object[]> sumReceivedQtyByPoGroupByProduct(@Param("poId") Long poId);
+        List<Object[]> sumReceivedQtyByPoGroupBySupplierProduct(@Param("poId") Long poId);
 
         @Query("""
                         SELECT sh.inventoryStock.product.id, COALESCE(SUM(sh.changeQty), 0)
@@ -211,13 +225,12 @@ public interface StockHistoryRepository extends JpaRepository<StockHistory, Long
                         LEFT JOIN sales_order_details sod ON sod.sales_order_id=so.id
                         LEFT JOIN purchase_orders po ON sh.ref_id=po.id
                         LEFT JOIN users po_user ON po_user.id=po.user_id
-                        LEFT JOIN purchase_order_details pod 
-                                ON pod.purchase_order_id=po.id 
+                        LEFT JOIN purchase_order_details pod
+                                ON pod.purchase_order_id=po.id
                                 AND ins.product_id=pod.product_id
                         LEFT JOIN suppliers s ON po.supplier_id=s.id
                         ORDER BY sh.created_at ASC, sh.id ASC
                                 """, nativeQuery = true)
         List<StockHistoriesWithDetailDTO> findAllStockHistoriesWithDetails();
-        
 
 }

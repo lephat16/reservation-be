@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.DeliverStockItemDTO;
 import com.example.ReservationApp.dto.request.ReceiveStockItemDTO;
-import com.example.ReservationApp.dto.request.StockChangeRequest;
 import com.example.ReservationApp.dto.response.inventory.DeliverStockResultDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.response.inventory.ReceiveStockResultDTO;
@@ -31,18 +30,6 @@ public class InventoryStockController {
 
     private final InventoryStockService inventoryStockService;
 
-    @PostMapping("/increase")
-    public ResponseEntity<ResponseDTO<InventoryStockDTO>> increaseProduct(@RequestBody StockChangeRequest request) {
-
-        return ResponseEntity.ok(inventoryStockService.increaseStock(request));
-    }
-
-    @PostMapping("/decrease")
-    public ResponseEntity<ResponseDTO<InventoryStockDTO>> decreaseStock(@RequestBody StockChangeRequest request) {
-
-        return ResponseEntity.ok(inventoryStockService.decreaseStock(request));
-    }
-
     @PostMapping("/receive-stock/{poId}")
     public ResponseEntity<ResponseDTO<ReceiveStockResultDTO>> receiveStock(
             @PathVariable Long poId,
@@ -56,12 +43,6 @@ public class InventoryStockController {
             @PathVariable Long soId,
             @Valid @RequestBody List<DeliverStockItemDTO> deliverItems) {
         return ResponseEntity.ok(inventoryStockService.deliverStock(soId, deliverItems));
-    }
-
-    @PostMapping("/adjust")
-    public ResponseEntity<ResponseDTO<InventoryStockDTO>> adjustStock(@RequestBody StockChangeRequest request) {
-
-        return ResponseEntity.ok(inventoryStockService.adjustStock(request));
     }
 
     @GetMapping("/all")
@@ -88,5 +69,18 @@ public class InventoryStockController {
 
         return ResponseEntity.ok(inventoryStockService.getInventoryStockByProduct(productId));
     }
-    
+
+    @GetMapping("/by-sp-and-warehouse")
+    public ResponseEntity<ResponseDTO<InventoryStockDTO>> getBySupplierProductIdAndWarehouseId(
+            @RequestBody Long spId, @RequestBody Long warehouseId) {
+
+        return ResponseEntity.ok(inventoryStockService.getBySupplierProductIdAndWarehouseId(spId, warehouseId));
+    }
+
+    @GetMapping("/by-sku/{sku}")
+    public ResponseEntity<ResponseDTO<List<InventoryStockDTO>>> getBySupplierSku(
+            @PathVariable String sku) {
+
+        return ResponseEntity.ok(inventoryStockService.getBySupplierSku(sku));
+    }
 }

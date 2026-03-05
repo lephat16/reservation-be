@@ -14,13 +14,15 @@ import io.lettuce.core.dynamic.annotation.Param;
 
 public interface SupplierProductRepository extends JpaRepository<SupplierProduct, Long> {
 
-    Optional <SupplierProduct> findByProductIdAndSupplierId(Long productId, Long SupplierId);
+    List<SupplierProduct> findByProductIdInAndSupplierId(List<Long> productIds, Long SupplierId);
+
+    Optional<SupplierProduct> findByProductIdAndSupplierId(Long productId, Long SupplierId);
 
     List<SupplierProduct> findBySupplierId(Long supplierId);
 
     List<SupplierProduct> findByProductId(Long productId);
 
-    List<SupplierProduct> findAllBySupplierSkuIn(List <String> skus);
+    List<SupplierProduct> findAllBySupplierSkuIn(List<String> skus);
 
     Optional<SupplierProduct> findBySupplierSku(String sku);
 

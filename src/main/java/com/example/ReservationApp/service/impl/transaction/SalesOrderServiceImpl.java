@@ -2,6 +2,7 @@ package com.example.ReservationApp.service.impl.transaction;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -344,6 +345,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                                 ", available=" + available);
             }
             int remaining = detail.getQty();
+            skuStocks.sort(Comparator.comparing(InventoryStock::getId));
             for (InventoryStock stock : skuStocks) {
                 int canReserve = stock.getQuantity() - stock.getReservedQuantity();
                 int reserveQty = Math.min(canReserve, remaining);

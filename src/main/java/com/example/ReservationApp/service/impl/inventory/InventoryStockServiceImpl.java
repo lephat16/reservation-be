@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.request.DeliverStockItemDTO;
 import com.example.ReservationApp.dto.request.ReceiveStockItemDTO;
-import com.example.ReservationApp.dto.request.StockChangeRequest;
 import com.example.ReservationApp.dto.response.inventory.DeliverStockResultDTO;
 import com.example.ReservationApp.dto.response.inventory.InventoryStockDTO;
 import com.example.ReservationApp.dto.response.inventory.ReceiveStockResultDTO;
@@ -24,8 +23,6 @@ import com.example.ReservationApp.dto.response.inventory.StockHistoryDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
 import com.example.ReservationApp.entity.inventory.StockHistory;
 import com.example.ReservationApp.entity.inventory.Warehouse;
-import com.example.ReservationApp.entity.product.Product;
-import com.example.ReservationApp.entity.supplier.Supplier;
 import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
@@ -43,14 +40,12 @@ import com.example.ReservationApp.mapper.SupplierProductMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.inventory.WarehouseRepository;
-import com.example.ReservationApp.repository.product.ProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
 import com.example.ReservationApp.service.inventory.InventoryStockService;
-import com.example.ReservationApp.service.inventory.StockHistoryService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,9 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 public class InventoryStockServiceImpl implements InventoryStockService {
 
     private final InventoryStockRepository inventoryStockRepository;
-    private final ProductRepository productRepository;
     private final WarehouseRepository warehouseRepository;
-    private final StockHistoryService stockHistoryService;
     private final InventoryStockMapper inventoryStockMapper;
     private final StockHistoryMapper stockHistoryMapper;
     private final ProductMapper productMapper;
@@ -135,7 +128,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     public ResponseDTO<InventoryStockDTO> getInventoryStockById(Long invenStockId) {
 
         InventoryStock inventoryStock = inventoryStockRepository.findById(invenStockId)
-                .orElseThrow(() -> new NotFoundException("inventory stock not found"));
+                .orElseThrow(() -> new NotFoundException("このストックは存在していません"));
         InventoryStockDTO inventoryStockDTO = inventoryStockMapper.toDTO(inventoryStock);
         List<StockHistoryDTO> stockHistoryDTOs = stockHistoryMapper.toDTOList(inventoryStock.getStockHistories());
         inventoryStockDTO.setStockHistories(stockHistoryDTOs);
@@ -171,158 +164,33 @@ public class InventoryStockServiceImpl implements InventoryStockService {
                 .build();
     }
 
-    /**
-     * 指定した在庫から数量を減少させます。
-     * 
-     * @param request StockChangeRequest 在庫変更リクエスト情報
-     * @return ResponseDTO<InventoryStockDTO> 変更後の在庫情報と履歴
-     * @throws NotFoundException          商品または倉庫が存在しない場合
-     * @throws InvalidCredentialException 減少数量が不正、または在庫不足の場合
-     */
     @Override
-    @Transactional
-    public ResponseDTO<InventoryStockDTO> increaseStock(StockChangeRequest request) {
+    public ResponseDTO<InventoryStockDTO> getBySupplierProductIdAndWarehouseId(Long supplierProductId,
+            Long warehouseId) {
 
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("商品が存在していません"));
-        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("倉庫が存在していません"));
-
-        InventoryStock stock = inventoryStockRepository
-                .findByProductIdAndWarehouseId(
-                        request.getProductId(),
-                        request.getWarehouseId())
-                .orElseGet(() -> {
-                    InventoryStock newStock = new InventoryStock();
-                    newStock.setProduct(product);
-                    newStock.setWarehouse(warehouse);
-                    newStock.setQuantity(0);
-                    return inventoryStockRepository.save(newStock);
-                });
-        if (request.getQty() <= 0) {
-            throw new InvalidCredentialException("数量が正しくありません");
-        }
-
-        StockHistoryDTO history = new StockHistoryDTO();
-        history.setInventoryStockId(stock.getId());
-        history.setChangeQty(request.getQty());
-        history.setType(StockChangeType.IN);
-        history.setRefType(RefType.PO);
-        history.setRefId(request.getRefId());
-        history.setNotes(request.getNotes());
-
-        ResponseDTO<StockHistoryDTO> savedHistory = stockHistoryService.createStockHistory(history, stock.getId());
-
-        List<StockHistoryDTO> stockHistoryDTOs = stockHistoryMapper.toDTOList(stock.getStockHistories());
-        InventoryStockDTO stockDTO = inventoryStockMapper.toDTO(stock);
-        stockDTO.setStockHistories(stockHistoryDTOs);
-        if (stock.getStockHistories().isEmpty()) {
-            stockDTO.setStockHistories(List.of(savedHistory.getData()));
-        }
-        return ResponseDTO.<InventoryStockDTO>builder()
-                .status(HttpStatus.OK.value())
-                .message("在庫の追加に成功しました")
-                .data(stockDTO)
-                .build();
-    }
-
-    /**
-     * 在庫数量を調整します（増減の両方）。
-     * 
-     * @param request StockChangeRequest 調整情報
-     * @return ResponseDTO<InventoryStockDTO> 調整後の在庫情報と履歴
-     * @throws NotFoundException          商品または倉庫が存在しない場合
-     * @throws InvalidCredentialException 在庫不足または不正な数量の場合
-     */
-    @Override
-    public ResponseDTO<InventoryStockDTO> decreaseStock(StockChangeRequest request) {
-
-        if (!productRepository.existsById(request.getProductId())) {
-            throw new NotFoundException("商品が存在していません");
-        }
-        if (!warehouseRepository.existsById(request.getWarehouseId())) {
-            throw new NotFoundException("倉庫が存在していません");
-        }
-        InventoryStock stock = inventoryStockRepository
-                .findByProductIdAndWarehouseId(
-                        request.getProductId(),
-                        request.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("在庫が存在していません"));
-        if (request.getQty() <= 0) {
-            throw new InvalidCredentialException("減少数量が正しくありません");
-        }
-        if (stock.getQuantity() < request.getQty()) {
-            throw new InvalidCredentialException("在庫が不足しています");
-        }
-
-        StockHistoryDTO history = new StockHistoryDTO();
-        history.setInventoryStockId(stock.getId());
-        history.setChangeQty(-request.getQty());
-        history.setType(StockChangeType.OUT);
-        history.setRefType(RefType.SO);
-        history.setRefId(request.getRefId());
-        history.setNotes(request.getNotes());
-
-        stockHistoryService.createStockHistory(history, stock.getId());
-        List<StockHistoryDTO> stockHistoryDTOs = stockHistoryMapper.toDTOList(stock.getStockHistories());
-        InventoryStockDTO stockDTO = inventoryStockMapper.toDTO(stock);
-        stockDTO.setStockHistories(stockHistoryDTOs);
+        InventoryStock inventoryStock = inventoryStockRepository
+                .findBySupplierProductIdAndWarehouseId(supplierProductId, warehouseId)
+                .orElseThrow(() -> new NotFoundException(""));
+        InventoryStockDTO inventoryStockDTO = inventoryStockMapper.toDTO(inventoryStock);
 
         return ResponseDTO.<InventoryStockDTO>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫の減少に成功しました")
-                .data(stockDTO)
+                .message("在庫情報の取得に成功しました")
+                .data(inventoryStockDTO)
                 .build();
     }
 
     @Override
-    @Transactional
-    public ResponseDTO<InventoryStockDTO> adjustStock(StockChangeRequest request) {
+    public ResponseDTO<List<InventoryStockDTO>> getBySupplierSku(String sku) {
 
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("商品が存在していません"));
-        Warehouse warehouse = warehouseRepository.findById(request.getWarehouseId())
-                .orElseThrow(() -> new NotFoundException("倉庫が存在していません"));
+        List<InventoryStock> inventoryStock = inventoryStockRepository
+                .findBySupplierProduct_SupplierSku(sku);
+        List<InventoryStockDTO> inventoryStockDTO = inventoryStockMapper.toDTOList(inventoryStock);
 
-        InventoryStock stock = inventoryStockRepository
-                .findByProductIdAndWarehouseId(request.getProductId(), request.getWarehouseId())
-                .orElseGet(() -> {
-                    if (request.getQty() < 0) {
-                        throw new InvalidCredentialException("在庫が存在しないため、減少はできません");
-                    }
-                    InventoryStock newStock = new InventoryStock();
-                    newStock.setProduct(product);
-                    newStock.setWarehouse(warehouse);
-                    newStock.setQuantity(0);
-                    return inventoryStockRepository.save(newStock);
-                });
-
-        int newQty = stock.getQuantity() + request.getQty();
-        if (newQty < 0) {
-            throw new InvalidCredentialException("在庫が不足しています");
-        }
-        stock.setQuantity(newQty);
-        inventoryStockRepository.save(stock);
-
-        StockHistoryDTO history = new StockHistoryDTO();
-        history.setInventoryStockId(stock.getId());
-        history.setChangeQty(request.getQty());
-        history.setType(StockChangeType.ADJ);
-        history.setRefType(RefType.ADJ);
-        history.setRefId(request.getRefId());
-        history.setNotes(request.getNotes());
-
-        ResponseDTO<StockHistoryDTO> savedHistory = stockHistoryService.createStockHistory(history, stock.getId());
-
-        InventoryStockDTO stockDTO = inventoryStockMapper.toDTO(stock);
-        stockDTO.setStockHistories(stockHistoryMapper.toDTOList(stock.getStockHistories()));
-        if (stock.getStockHistories().isEmpty()) {
-            stockDTO.setStockHistories(List.of(savedHistory.getData()));
-        }
-        return ResponseDTO.<InventoryStockDTO>builder()
+        return ResponseDTO.<List<InventoryStockDTO>>builder()
                 .status(HttpStatus.OK.value())
-                .message("在庫の調整に成功しました")
-                .data(stockDTO)
+                .message("在庫情報の取得に成功しました")
+                .data(inventoryStockDTO)
                 .build();
     }
 
@@ -340,11 +208,10 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     @Transactional
     public ResponseDTO<ReceiveStockResultDTO> receiveStock(Long poId, List<ReceiveStockItemDTO> receivedItems) {
 
-        // PO を取得。存在しなければ例外
-        PurchaseOrder po = purchaseOrderRepository.findById(poId)
+        // 明細も含めて取得（存在しない場合は例外）
+        PurchaseOrder po = purchaseOrderRepository.findByIdWithDetails(poId)
                 .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
-
-        // PO が完了済みなら例外
+        // 既に完了済みの発注書は受領不可
         if (po.getStatus() == OrderStatus.COMPLETED) {
             throw new IllegalStateException("この注文書は既に完了しています");
         }
@@ -352,127 +219,114 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         boolean anyReceived = false; // 今回受領したアイテムがあるか
         boolean allReceived = true; // 全明細が完了しているか
 
-        // PO に含まれる明細IDをセット化
-        Set<Long> poDetailIds = po.getDetails().stream()
-                .map(PurchaseOrderDetail::getId)
+        // 明細情報をMap化（detailId → Detail）
+        Map<Long, PurchaseOrderDetail> detailMap = po.getDetails().stream()
+                .collect(Collectors.toMap(PurchaseOrderDetail::getId, d -> d));
+        // POに含まれる商品ID一覧を取得
+        List<Long> productIds = po.getDetails().stream()
+                .map(d -> d.getProduct().getId())
+                .toList();
+        // SupplierProduct を取得
+        List<SupplierProduct> sps = supplierProductRepository.findByProductIdInAndSupplierId(
+                productIds, po.getSupplier().getId());
+        // productId → SupplierProduct のMap
+        Map<Long, SupplierProduct> spMap = sps.stream()
+                .collect(Collectors.toMap(sp -> sp.getProduct().getId(), sp -> sp));
+
+        // 既存の在庫情報を取得
+        Set<Long> spIds = spMap.values().stream().map(SupplierProduct::getId).collect(Collectors.toSet());
+        Set<Long> warehouseIds = receivedItems.stream().map(ReceiveStockItemDTO::getWarehouseId)
                 .collect(Collectors.toSet());
+        List<InventoryStock> allStocks = inventoryStockRepository.findBySupplierProductIdInAndWarehouseIdIn(spIds,
+                warehouseIds);
 
-        // すでに受領済み数量を productId ごとに取得
+        // key: supplierProductId_warehouseId
+        Map<String, InventoryStock> stockMap = allStocks.stream()
+                .collect(Collectors.toMap(
+                        s -> s.getSupplierProduct().getId() + "_" + s.getWarehouse().getId(),
+                        s -> s));
+
+        // 既に受領済み数量を取得（履歴テーブルから集計）
         Map<Long, Integer> receivedQtyMap = new HashMap<>();
-        for (Object[] row : stockHistoryRepository.sumReceivedQtyByPoGroupByProduct(poId)) {
-            Long productId = (Long) row[0];
+        for (Object[] row : stockHistoryRepository.sumReceivedQtyByPoGroupBySupplierProduct(poId)) {
+            Long spId = (Long) row[0];
             Integer qty = ((Number) row[1]).intValue();
-            receivedQtyMap.put(productId, qty);
+            receivedQtyMap.put(spId, qty);
         }
-
-        // request 内で同じ detailId が複数回出た場合、数量を合計
-        Map<Long, Integer> requestQtyMap = new HashMap<>();
-        for (ReceiveStockItemDTO item : receivedItems) {
-            if (!poDetailIds.contains(item.getDetailId())) {
-                throw new IllegalStateException(
-                        "注文書に含まれていない明細です。 detailId=" + item.getDetailId());
-            }
-
-            if (item.getReceivedQty() <= 0) {
-                throw new InvalidCredentialException("受領数量は0より大きくなければなりません");
-            }
-
-            // 同じ明細IDの数量を加算
-            requestQtyMap.put(
-                    item.getDetailId(),
-                    requestQtyMap.getOrDefault(item.getDetailId(), 0) + item.getReceivedQty());
-
-        }
-
+        // 既に完了している明細IDリスト
         List<Long> allCompletedDetailIds = po.getDetails().stream()
                 .filter(d -> d.getStatus() == OrderStatus.COMPLETED)
                 .map(PurchaseOrderDetail::getId)
-                .collect(Collectors.toList());
+                .collect(Collectors.toCollection(ArrayList::new));
+
         List<StockHistoryDTO> createdStockHistories = new ArrayList<>();
-        // 各明細ごとの受領処理
-        for (Map.Entry<Long, Integer> entry : requestQtyMap.entrySet()) {
-            Long detailId = entry.getKey();
-            int totalReceivedInRequest = entry.getValue();
+        // 受領処理ループ
+        for (ReceiveStockItemDTO item : receivedItems) {
+            PurchaseOrderDetail detail = detailMap.get(item.getDetailId());
+            // 明細存在チェック
+            if (detail == null)
+                throw new IllegalStateException("注文書に含まれていない明細です。 detailId=" + item.getDetailId());
+            // 数量チェック
+            if (item.getReceivedQty() <= 0)
+                throw new InvalidCredentialException("受領数量は0より大きくなければなりません");
+            // SupplierProduct存在チェック
+            SupplierProduct sp = spMap.get(detail.getProduct().getId());
+            if (sp == null)
+                throw new NotFoundException("SupplierProductが存在しません。productId=" + detail.getProduct().getId());
+            // 発注数量超過チェック
+            int deliveredSoFar = receivedQtyMap.getOrDefault(sp.getId(), 0);
+            int totalAfterReceive = deliveredSoFar + item.getReceivedQty();
 
-            PurchaseOrderDetail detail = poDetailRepository.findById(detailId)
-                    .orElseThrow(() -> new NotFoundException("注文詳細が存在していません。 ID=" + detailId));
+            if (totalAfterReceive > detail.getQty())
+                throw new InvalidCredentialException("受領数量が発注数量を超えています。 (orderedQty = " + detail.getQty() + ")");
 
-            ReceiveStockItemDTO item = receivedItems.stream()
-                    .filter(i -> i.getDetailId().equals(detailId))
-                    .findFirst()
-                    .orElseThrow(() -> new NotFoundException("注文明細IDに対応する受領アイテムが見つかりません: detailId=" + detailId));
-            Long warehouseId = item.getWarehouseId();
-            Product product = detail.getProduct();
-            Supplier supplier = po.getSupplier();
-            SupplierProduct sp = supplierProductRepository.findByProductIdAndSupplierId(
-                    product.getId(),
-                    supplier.getId())
-                    .orElseThrow(() -> new NotFoundException(
-                            "SupplierProductが存在しません。productId=" + product.getId() +
-                                    ", supplierId=" + supplier.getId()));
-
-            Long productId = detail.getProduct().getId();
-            int DeliveredSoFar = receivedQtyMap.getOrDefault(productId, 0);
-            int totalAfterReceive = DeliveredSoFar + totalReceivedInRequest;
-
-            if (totalAfterReceive > detail.getQty()) {
-                throw new InvalidCredentialException(
-                        "受領数量が発注数量を超えています。 (orderedQty = " + detail.getQty() + ")");
-            }
-
+            // 明細ステータス更新
             if (totalAfterReceive == detail.getQty()) {
                 detail.setStatus(OrderStatus.COMPLETED);
                 allCompletedDetailIds.add(detail.getId());
-
             } else if (totalAfterReceive > 0) {
                 detail.setStatus(OrderStatus.PROCESSING);
             }
-
             poDetailRepository.save(detail);
 
-            receivedQtyMap.put(productId, totalAfterReceive);
+            receivedQtyMap.put(sp.getId(), totalAfterReceive);
             anyReceived = true;
-
-            InventoryStock stock = inventoryStockRepository
-                    .findByProductIdAndWarehouseId(productId, receivedItems.stream()
-                            .filter(i -> i.getDetailId().equals(detailId))
-                            .findFirst()
-                            .get()
-                            .getWarehouseId())
-                    .orElseGet(() -> {
-                        InventoryStock newStock = new InventoryStock();
-                        newStock.setProduct(detail.getProduct());
-                        Warehouse wh = warehouseRepository.findById(warehouseId)
-                                .orElseThrow(() -> new NotFoundException("倉庫が存在していません。, ID=" + warehouseId));
-                        newStock.setWarehouse(wh);
-                        newStock.setQuantity(0);
-
-                        newStock.setSupplierProduct(sp);
-                        return inventoryStockRepository.save(newStock);
-                    });
-
-            stock.setSupplierProduct(sp);
+            // 在庫更新処理
+            String stockKey = sp.getId() + "_" + item.getWarehouseId();
+            InventoryStock stock = stockMap.get(stockKey);
+            // 在庫が存在しない場合は新規作成
+            if (stock == null) {
+                Warehouse wh = warehouseRepository.findById(item.getWarehouseId())
+                        .orElseThrow(() -> new NotFoundException("倉庫が存在していません。, ID=" + item.getWarehouseId()));
+                stock = new InventoryStock();
+                stock.setProduct(detail.getProduct());
+                stock.setSupplierProduct(sp);
+                stock.setWarehouse(wh);
+                stock.setQuantity(0);
+                stock = inventoryStockRepository.save(stock);
+                stockMap.put(stockKey, stock);
+            }
+            // 数量加算
+            stock.setQuantity(stock.getQuantity() + item.getReceivedQty());
             inventoryStockRepository.save(stock);
-
+            // 在庫履歴登録
             StockHistory history = new StockHistory();
             history.setInventoryStock(stock);
-            history.setChangeQty(totalReceivedInRequest);
+            history.setChangeQty(item.getReceivedQty());
             history.setType(StockChangeType.IN);
             history.setRefType(RefType.PO);
             history.setRefId(po.getId());
-            history.setNotes(item.getNote() != null ? item.getNote()
-                    : "発注書からの受領" + //
-                            "");
+            history.setNotes(item.getNote() != null ? item.getNote() : "発注書からの受領");
             stockHistoryRepository.save(history);
 
-            stock.setQuantity(stock.getQuantity() + totalReceivedInRequest);
-            inventoryStockRepository.save(stock);
             createdStockHistories.add(stockHistoryMapper.toDTO(history));
         }
 
         // 全明細が完了しているか判定
         for (PurchaseOrderDetail d : po.getDetails()) {
-            int received = receivedQtyMap.getOrDefault(d.getProduct().getId(), 0);
+
+            SupplierProduct sp = spMap.get(d.getProduct().getId());
+            int received = receivedQtyMap.getOrDefault(sp.getId(), 0);
             if (received < d.getQty()) {
                 allReceived = false;
                 break;
@@ -557,21 +411,22 @@ public class InventoryStockServiceImpl implements InventoryStockService {
             SalesOrderDetail detail = salesOrderDetailRepository.findById(itemDTO.getDetailId())
                     .orElseThrow(() -> new NotFoundException("明細が存在しません。ID=" + itemDTO.getDetailId()));
 
-            Product product = detail.getProduct();
+            SupplierProduct supplierProduct = detail.getSupplierProduct();
 
             // 出庫対象の在庫を取得
             InventoryStock stock = inventoryStockRepository
-                    .findByProductIdAndWarehouseId(
-                            product.getId(),
+                    .findBySupplierProductIdAndWarehouseId(
+                            supplierProduct.getId(),
                             itemDTO.getWarehouseId())
                     .orElseThrow(() -> new NotFoundException(
-                            "在庫が存在しません。productId=" + product.getId()
+                            "在庫が存在しません。productId=" + supplierProduct.getId()
                                     + ", warehouseId=" + itemDTO.getWarehouseId()));
-
+            log.info("ReservedQuantity: {}", stock.getReservedQuantity());
+            log.info("DeliveredQty: {}", itemDTO.getDeliveredQty());
             // 予約在庫が不足している場合は例外
             if (stock.getReservedQuantity() < itemDTO.getDeliveredQty()) {
                 throw new InvalidCredentialException(
-                        "予約在庫が不足しています。productId=" + product.getId()
+                        "予約在庫が不足しています。productId=" + supplierProduct.getId()
                                 + ", warehouseId=" + itemDTO.getWarehouseId());
             }
 

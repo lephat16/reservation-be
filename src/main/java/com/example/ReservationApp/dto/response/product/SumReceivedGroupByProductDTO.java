@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class SumReceivedGroupByProductDTO {
-    private Long productId;
+    private Long supplierProductId;
     
     private Long receivedQty;
 
