@@ -28,7 +28,7 @@ public class SupplierProductController {
 
         private final SupplierProductService supplierProductService;
 
-        @PostMapping("/{spId}/add")
+        @PostMapping("/{spId}/add-sp")
         public ResponseEntity<ResponseDTO<SupplierProductDTO>> addSupplierProduct(
                         @RequestBody @Valid SupplierProductDTO supplierProductDTO,
                         @PathVariable Long spId) {
@@ -71,14 +71,14 @@ public class SupplierProductController {
                                 .ok(supplierProductService.deleteSupplierProduct(spId));
         }
 
-        @GetMapping("/with-stock/{supplierId}")
+        @GetMapping("/{supplierId}/get-sp-with-stock")
         public ResponseEntity<ResponseDTO<List<CategoryProductsDTO>>> getSupplierProductsWithStock(
                         @PathVariable Long supplierId) {
                 return ResponseEntity
                                 .ok(supplierProductService.getSupplierProductsWithStock(supplierId));
         }
 
-        @GetMapping("/with-lead-time/{supplierId}")
+        @GetMapping("/{supplierId}/get-sp-with-lead-time")
         public ResponseEntity<ResponseDTO<List<CategoryProductsDTO>>> getSupplierProductsWithLeadTime(
                         @PathVariable Long supplierId) {
                 return ResponseEntity

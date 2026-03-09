@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.notification.NotificationDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDTO;
 import com.example.ReservationApp.dto.transaction.SalesOrderDetailDTO;
 import com.example.ReservationApp.entity.inventory.InventoryStock;
@@ -20,6 +21,7 @@ import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
 import com.example.ReservationApp.entity.user.User;
+import com.example.ReservationApp.enums.NotificationType;
 import com.example.ReservationApp.enums.OrderStatus;
 import com.example.ReservationApp.enums.UserRole;
 import com.example.ReservationApp.exception.InvalidActionException;
@@ -33,6 +35,7 @@ import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
 import com.example.ReservationApp.service.impl.auth.UserServiceImpl;
+import com.example.ReservationApp.service.notification.NotificationService;
 import com.example.ReservationApp.service.transaction.SalesOrderDetailService;
 import com.example.ReservationApp.service.transaction.SalesOrderService;
 
@@ -52,6 +55,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     private final SalesOrderDetailService soDetailService;
     private final InventoryStockRepository inventoryStockRepository;
     private final SalesOrderDetailRepository soDetailRepository;
+    private final NotificationService notificationService;
 
     /**
      * 新しい SalesOrder を作成する
@@ -115,6 +119,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         so.setDetails(details);
         so.setTotal(calcTotal(details));
         soRepository.save(so);
+
+        notificationService.createNotification(
+                NotificationDTO.builder()
+                        .userId(currentUser.getId())
+                        .title("新しい受注書が作成されました")
+                        .message("受注ID #" + so.getId() + " が作成されました")
+                        .type(NotificationType.ORDER)
+                        .link("/sell-order/" + so.getId())
+                        .build());
 
         // DTOに変換してレスポンス返却
         SalesOrderDTO soDTO = soMapper.toDTO(so);
@@ -304,6 +317,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         SalesOrder so = soRepository.findById(saleOrderId)
                 .orElseThrow(() -> new NotFoundException("この販売注文書は存在していません"));
 
+        User currentUser = userService.getCurrentUserEntity();
         if (so.getStatus() != OrderStatus.NEW) {
             throw new IllegalStateException("この販売注文書はすでに処理中です");
         }
@@ -363,6 +377,14 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         so.setStatus(OrderStatus.PENDING);
         soRepository.save(so);
 
+        notificationService.createNotification(
+                NotificationDTO.builder()
+                        .userId(currentUser.getId())
+                        .title("受注書を受け取りました")
+                        .message("受注ID #" + so.getId() + " の受注書を正常に受け取りました")
+                        .type(NotificationType.ORDER)
+                        .link("/sell-order/" + so.getId())
+                        .build());
         SalesOrderDTO soDTO = soMapper.toDTO(so);
         List<SalesOrderDetailDTO> detailDTOs = soDetailMapper.toDTOList(so.getDetails());
         soDTO.setDetails(detailDTOs);

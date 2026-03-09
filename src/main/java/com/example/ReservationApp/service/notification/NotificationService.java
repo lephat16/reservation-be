@@ -13,4 +13,8 @@ public interface NotificationService {
     ResponseDTO<NotificationDTO> markAsRead(Long id);
 
     ResponseDTO<NotificationDTO> createNotification(NotificationDTO n);
+
+    ResponseDTO<Void> deleteNotification(Long id);
+
+    ResponseDTO<Void> markReadAllNotification(Long userId);
 }

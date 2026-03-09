@@ -48,7 +48,7 @@ public class UserController {
      *
      * @return 全ユーザー情報
      */
-    @GetMapping("/all")
+    @GetMapping("/all-users")
     public ResponseEntity<ResponseDTO<List<UserDTO>>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
@@ -71,7 +71,7 @@ public class UserController {
      * @param userDTO 更新内容を含むUserDTO
      * @return 更新後のユーザー情報
      */
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}/update")
     public ResponseEntity<ResponseDTO<UserDTO>> updateUser(@PathVariable Long id, @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userDTO));
     }
@@ -82,7 +82,7 @@ public class UserController {
      * @param id 削除対象ユーザーのID
      * @return 削除後のユーザー情報
      */
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}/delete")
     public ResponseEntity<ResponseDTO<Void>> deleteUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.deleteUser(id));
     }
@@ -98,7 +98,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getCurrentLoggedInUser());
     }
 
-    @PostMapping("/create")
+    @PostMapping("/create-user")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseDTO<UserDTO>> createUserByAdmin(
             @Valid @RequestBody CreateUserDTO registerRequestDTO,
@@ -107,7 +107,7 @@ public class UserController {
         return ResponseEntity.ok(userService.createUserByAdmin(registerRequestDTO, authUser));
     }
 
-    @PutMapping("/{id}/password")
+    @PutMapping("/{id}/change-password")
     public ResponseEntity<ResponseDTO<UserDTO>> changePassword(
             @PathVariable Long id,
             @Valid @RequestBody ChangePasswordRequest request) {

@@ -30,7 +30,7 @@ public class InventoryStockController {
 
     private final InventoryStockService inventoryStockService;
 
-    @PostMapping("/receive-stock/{poId}")
+    @PostMapping("/{poId}/receive-stock")
     public ResponseEntity<ResponseDTO<ReceiveStockResultDTO>> receiveStock(
             @PathVariable Long poId,
             @RequestBody List<ReceiveStockItemDTO> receivedItems) {
@@ -38,14 +38,14 @@ public class InventoryStockController {
         return ResponseEntity.ok(inventoryStockService.receiveStock(poId, receivedItems));
     }
 
-    @PostMapping("/deliver-stock/{soId}")
+    @PostMapping("/{soId}/deliver-stock")
     public ResponseEntity<ResponseDTO<DeliverStockResultDTO>> de(
             @PathVariable Long soId,
             @Valid @RequestBody List<DeliverStockItemDTO> deliverItems) {
         return ResponseEntity.ok(inventoryStockService.deliverStock(soId, deliverItems));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/all-stocks")
     public ResponseEntity<ResponseDTO<List<InventoryStockDTO>>> getAllInventoryStocks() {
 
         return ResponseEntity.ok(inventoryStockService.getAllInventoryStocks());

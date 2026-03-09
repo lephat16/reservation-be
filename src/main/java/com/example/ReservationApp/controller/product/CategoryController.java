@@ -29,7 +29,7 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    @PostMapping("/add")
+    @PostMapping("/add-cat")
     public ResponseEntity<ResponseDTO<CategoryDTO>> createCategory(
             @RequestPart("category") @Valid CategoryDTO categoryDTO,
             @RequestPart(value = "file", required = false) MultipartFile file) {
@@ -37,19 +37,19 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.createCategory(categoryDTO, file));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/all-cat")
     public ResponseEntity<ResponseDTO<List<CategoryDTO>>> getAllCategories() {
 
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/get-cat")
     public ResponseEntity<ResponseDTO<CategoryDTO>> getCategoryById(@PathVariable Long id) {
 
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}/update-cat")
     public ResponseEntity<ResponseDTO<CategoryDTO>> updateCategory(
             @PathVariable Long id,
             @RequestPart("category") @Valid CategoryDTO categoryDTO,
@@ -58,7 +58,7 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.updateCategory(id, categoryDTO, file));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}/delete-cat")
     public ResponseEntity<ResponseDTO<Void>> deleteCategory(@PathVariable Long id) {
 
         return ResponseEntity.ok(categoryService.deleteCategory(id));
@@ -70,7 +70,7 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getActiveCategories());
     }
 
-    @GetMapping("/name/{name}")
+    @GetMapping("/by-name/{name}")
     public ResponseEntity<ResponseDTO<CategoryDTO>> getCategoryByName(@PathVariable String name) {
 
         return ResponseEntity.ok(categoryService.getCategoryByName(name));
@@ -82,7 +82,7 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getAllCategorySummaries());
     }
 
-    @GetMapping("/summaries/{categoryId}")
+    @GetMapping("/{categoryId}/summaries-by-id")
     public ResponseEntity<ResponseDTO<CategorySummaryDTO>> getCategorySummariesById(@PathVariable Long categoryId) {
 
         return ResponseEntity.ok(categoryService.getCategorySummariesById(categoryId));

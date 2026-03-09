@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.example.ReservationApp.dto.ResponseDTO;
 import com.example.ReservationApp.dto.notification.NotificationDTO;
 import com.example.ReservationApp.entity.notification.Notification;
+import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.NotificationMapper;
 import com.example.ReservationApp.repository.notification.NotificationRepository;
 import com.example.ReservationApp.service.notification.NotificationService;
@@ -23,7 +24,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public ResponseDTO<List<NotificationDTO>> getNotificationsForUser(Long userId) {
-        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Notification> notifications = notificationRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId);
         List<NotificationDTO> notificationDTOs = notificationMapper.toDTOList(notifications);
         return ResponseDTO.<List<NotificationDTO>>builder()
                 .status(HttpStatus.OK.value())
@@ -57,6 +58,16 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public ResponseDTO<Void> markReadAllNotification(Long userId) {
+        notificationRepository.markAllAsRead(userId);
+
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("すべての通知を既読にしました")
+                .build();
+    }
+
+    @Override
     public ResponseDTO<NotificationDTO> createNotification(NotificationDTO notification) {
         Notification entity = notificationMapper.toEntity(notification);
         notificationRepository.save(entity);
@@ -67,4 +78,18 @@ public class NotificationServiceImpl implements NotificationService {
                 .build();
 
     }
+
+    @Override
+    public ResponseDTO<Void> deleteNotification(Long id) {
+        if (!notificationRepository.existsById(id)) {
+            throw new NotFoundException("指定した通知は存在していない");
+        }
+        notificationRepository.deleteById(id);
+        return ResponseDTO.<Void>builder()
+                .status(HttpStatus.OK.value())
+                .message("通知を削除しました")
+                .build();
+
+    }
+
 }

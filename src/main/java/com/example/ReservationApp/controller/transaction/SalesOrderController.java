@@ -26,18 +26,18 @@ public class SalesOrderController {
 
     private final SalesOrderService salesOrderService;
 
-    @PostMapping("/sales/add")
+    @PostMapping("/add-sales")
     ResponseEntity<ResponseDTO<SalesOrderDTO>> createSalesOrder(
             @Valid @RequestBody SalesOrderDTO salesOrderDTO) {
         return ResponseEntity.ok(salesOrderService.createSalesOrder(salesOrderDTO));
     }
 
-    @GetMapping("/sales/all")
+    @GetMapping("/all-sales")
     ResponseEntity<ResponseDTO<List<SalesOrderDTO>>> getAllSalesOrders() {
         return ResponseEntity.ok(salesOrderService.getAllSalesOrders());
     }
 
-    @GetMapping("/sales/{soId}")
+    @GetMapping("/{soId}/by-sale")
     ResponseEntity<ResponseDTO<SalesOrderDTO>> getSalesOrderById(@PathVariable Long soId) {
         return ResponseEntity.ok(salesOrderService.getSalesOrderById(soId));
     }
@@ -49,19 +49,19 @@ public class SalesOrderController {
         return ResponseEntity.ok(salesOrderService.updateSalesOrder(soId, salesOrderDTO));
     }
 
-    @PutMapping("/sales/update-qty-and-desc/{soId}")
+    @PutMapping("/sales/{soId}/update-qty-and-desc")
     ResponseEntity<ResponseDTO<SalesOrderDTO>> updateSalesOrderQuantityAndDescription(
             @PathVariable Long soId,
             @Valid @RequestBody SalesOrderDTO salesOrderDTO) {
         return ResponseEntity.ok(salesOrderService.updateSalesOrderQuantityAndDescription(soId, salesOrderDTO));
     }
 
-    @DeleteMapping("/sales/delete/{soId}")
+    @DeleteMapping("/sales/{soId}/delete-sale")
     ResponseEntity<ResponseDTO<Void>> deleteSalesOrder(@PathVariable Long soId) {
         return ResponseEntity.ok(salesOrderService.deleteSalesOrder(soId));
     }
 
-    @PutMapping("/sales/prepare/{soId}")
+    @PutMapping("/sales/{soId}/prepare")
     ResponseEntity<ResponseDTO<SalesOrderDTO>> prepareOrder(@PathVariable Long soId) {
         return ResponseEntity.ok(salesOrderService.prepareOrder(soId));
     }

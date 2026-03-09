@@ -45,7 +45,7 @@ public class StockHistoryController {
         return ResponseEntity.ok(stockHistoryService.getAllStockHistories());
     }
 
-    @GetMapping("/stock-history/with-details/all")
+    @GetMapping("/stock-history/all-with-details")
     public ResponseEntity<ResponseDTO<List<StockHistoriesWithDetailDTO>>> getAllStockHistoriesWithDetails() {
 
         return ResponseEntity.ok(stockHistoryService.getAllStockHistoriesWithDetails());
@@ -82,14 +82,14 @@ public class StockHistoryController {
         return ResponseEntity.ok(stockHistoryService.getRecentStockHistory(fromDateTime));
     }
 
-    @GetMapping("/stock-history/purchase-order/{poId}")
+    @GetMapping("/stock-history/{poId}/by-purchase-order")
     public ResponseEntity<ResponseDTO<List<InventoryHistoryByOrderDTO>>> getInventoryHistoryByPurchaseOrder(
             @PathVariable Long poId) {
 
         return ResponseEntity.ok(stockHistoryService.getInventoryHistoryByPurchaseOrder(poId));
     }
     
-    @GetMapping("/stock-history/sale-order/{soId}")
+    @GetMapping("/stock-history/{soId}/by-sale-order")
     public ResponseEntity<ResponseDTO<List<InventoryHistoryByOrderDTO>>> getInventoryHistoryBySaleOrder(
             @PathVariable Long soId) {
 

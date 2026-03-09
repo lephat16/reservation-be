@@ -35,32 +35,32 @@ public class SupplierController {
 
     private final SupplierService supplierService;
 
-    @PostMapping("/add")
+    @PostMapping("/add-sup")
     public ResponseEntity<ResponseDTO<SupplierDTO>> addSupplier(@RequestBody @Valid SupplierDTO supplierDTO) {
 
         return ResponseEntity.ok(supplierService.addSupplier(supplierDTO));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/all-sup")
     public ResponseEntity<ResponseDTO<List<SupplierDTO>>> getAllSuppliers() {
 
         return ResponseEntity.ok(supplierService.getAllSuppliers());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/get-sup")
     public ResponseEntity<ResponseDTO<SupplierDTO>> getSupplierById(@PathVariable Long id) {
 
         return ResponseEntity.ok(supplierService.getSupplierById(id));
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}/update-sup")
     public ResponseEntity<ResponseDTO<SupplierDTO>> updateSupplier(@PathVariable Long id,
             @RequestBody @Valid SupplierDTO supplierDTO) {
 
         return ResponseEntity.ok(supplierService.updateSupplier(id, supplierDTO));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}/delete-sup")
     public ResponseEntity<ResponseDTO<Void>> deleteSupplier(@PathVariable Long id) {
 
         return ResponseEntity.ok(supplierService.deleteSupplier(id));

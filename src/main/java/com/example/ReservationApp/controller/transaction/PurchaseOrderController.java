@@ -26,23 +26,23 @@ public class PurchaseOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
 
-    @PostMapping("/purchase/add")
+    @PostMapping("/add-purchase")
     ResponseEntity<ResponseDTO<PurchaseOrderDTO>> createPurchaseOrder(
             @Valid @RequestBody PurchaseOrderDTO purchaseOrderDTO) {
         return ResponseEntity.ok(purchaseOrderService.createPurchaseOrder(purchaseOrderDTO));
     }
 
-    @GetMapping("/purchase/all")
+    @GetMapping("/all-purchases")
     ResponseEntity<ResponseDTO<List<PurchaseOrderDTO>>> getAllPurchasesOrders() {
         return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
     }
 
-    @GetMapping("/purchase/by-supplier/{supplierId}")
+    @GetMapping("/purchase/{supplierId}/get-po-by-supplier")
     ResponseEntity<ResponseDTO<List<PurchaseOrderDTO>>> getPurchaseOrderBySupplier(@PathVariable Long supplierId) {
         return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderBySupplier(supplierId));
     }
 
-    @GetMapping("/purchase/{poId}")
+    @GetMapping("/{poId}/by-purchase")
     ResponseEntity<ResponseDTO<PurchaseOrderDTO>> getPurchaseOrderDetailsByPOIdWithSku(@PathVariable Long poId) {
         return ResponseEntity.ok(purchaseOrderService.getPurchaseOrderDetailsByPOIdWithSku(poId));
     }
@@ -54,7 +54,7 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(purchaseOrderService.updatePurchaseOrder(poId, purchaseOrderDTO));
     }
 
-    @PutMapping("/purchase/update-qty-and-desc/{poId}")
+    @PutMapping("/purchase/{poId}/update-qty-and-desc")
     ResponseEntity<ResponseDTO<PurchaseOrderDTO>> updatePurchaseOrderQuantityAndDescription(
             @PathVariable Long poId,
             @Valid @RequestBody PurchaseOrderDTO purchaseOrderDTO) {
@@ -62,12 +62,12 @@ public class PurchaseOrderController {
                 .ok(purchaseOrderService.updatePurchaseOrderQuantityAndDescription(poId, purchaseOrderDTO));
     }
 
-    @DeleteMapping("/purchase/delete/{poId}")
+    @DeleteMapping("/purchase/{poId}/delete-po")
     ResponseEntity<ResponseDTO<Void>> deletePurchaseOrder(@PathVariable Long poId) {
         return ResponseEntity.ok(purchaseOrderService.deletePurchaseOrder(poId));
     }
 
-    @PutMapping("/purchase/place/{poId}")
+    @PutMapping("/purchase/{poId}/place")
     ResponseEntity<ResponseDTO<PurchaseOrderDTO>> placeOrder(@PathVariable Long poId) {
         return ResponseEntity.ok(purchaseOrderService.placeOrder(poId));
     }

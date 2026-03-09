@@ -29,16 +29,16 @@ public class WarehouseController {
 
     private final WarehouseService warehouseService;
 
-    @PostMapping("/add")
+    @PostMapping("/add-wh")
     public ResponseEntity<ResponseDTO<WarehouseDTO>> createWarehouse(@RequestBody WarehouseDTO warehouseDTO) {
         return ResponseEntity.ok(warehouseService.createWarehouse(warehouseDTO));
     }
 
-    @GetMapping("/all")
+    @GetMapping("/all-wh")
     public ResponseEntity<ResponseDTO<List<WarehouseDTO>>> getAllWarehouse() {
         return ResponseEntity.ok(warehouseService.getAllWarehouse());
     }
-    @GetMapping("/with-location/all")
+    @GetMapping("/with-location/all-wh")
     public ResponseEntity<ResponseDTO<List<WarehouseDTO>>> getAllWarehouseWithLocation() {
         return ResponseEntity.ok(warehouseService.getAllWarehouseWithLocation());
     }
@@ -62,14 +62,14 @@ public class WarehouseController {
         return ResponseEntity.ok(warehouseService.getWarehouseWithTotalChangedQty());
     }
 
-    @PutMapping("/update/{id}")
+    @PutMapping("/{id}/update-wh")
     public ResponseEntity<ResponseDTO<WarehouseDTO>> updateWarehouse(
             @PathVariable Long id,
             @RequestBody WarehouseDTO warehouseDTO) {
         return ResponseEntity.ok(warehouseService.updateWarehouse(id, warehouseDTO));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}/delete-wh")
     public ResponseEntity<ResponseDTO<Void>> deleteWarehouse(@PathVariable Long id) {
         return ResponseEntity.ok(warehouseService.deleteWarehouse(id));
     }

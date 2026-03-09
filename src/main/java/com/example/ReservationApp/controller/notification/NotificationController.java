@@ -3,9 +3,10 @@ package com.example.ReservationApp.controller.notification;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,31 +19,38 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/notification")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationController {
     private final NotificationService notificationService;
 
-    @GetMapping("/all")
+    @GetMapping("/all-notifications")
     public ResponseEntity<ResponseDTO<List<NotificationDTO>>> getNotificationsForUser(
             @RequestParam Long userId) {
 
         return ResponseEntity.ok(notificationService.getNotificationsForUser(userId));
     }
-     @GetMapping("/unread-count")
+
+    @GetMapping("/notification/unread-count")
     public ResponseEntity<ResponseDTO<Long>> getUnreadCount(@RequestParam Long userId) {
         return ResponseEntity.ok(notificationService.getUnreadCount(userId));
     }
-    @PostMapping("/mark-read")
+
+    @PostMapping("/notification/mark-read")
     public ResponseEntity<ResponseDTO<NotificationDTO>> markAsRead(@RequestParam Long id) {
         return ResponseEntity.ok(notificationService.markAsRead(id));
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<ResponseDTO<NotificationDTO>> createNotification(
-            @RequestBody NotificationDTO notificationDTO) {
+    @DeleteMapping("/{id}/delete-notification")
+    public ResponseEntity<ResponseDTO<Void>> deleteNotification(@PathVariable Long id) {
 
-        return ResponseEntity.ok(notificationService.createNotification(notificationDTO));
+        return ResponseEntity.ok(notificationService.deleteNotification(id));
+    }
+
+    @PostMapping("/notification/mark-read-all")
+    public ResponseEntity<ResponseDTO<Void>> markReadAllNotification(@RequestParam Long userId) {
+
+        return ResponseEntity.ok(notificationService.markReadAllNotification(userId));
     }
 }

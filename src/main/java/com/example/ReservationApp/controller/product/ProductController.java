@@ -33,7 +33,7 @@ public class ProductController {
 
     private final ProductService productService;
 
-    @PostMapping("/add")
+    @PostMapping("/add-prod")
     public ResponseEntity<ResponseDTO<ProductDTO>> addProduct(@RequestBody ProductDTO productDTO) {
 
         return ResponseEntity.ok(productService.createProduct(productDTO));
@@ -51,14 +51,14 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{id}/update-prod", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ResponseDTO<ProductDTO>> updateProduct(@PathVariable Long id,
             @ModelAttribute ProductDTO productDTO) {
 
         return ResponseEntity.ok(productService.updateProduct(id, productDTO));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/{id}/delete-cat")
     public ResponseEntity<ResponseDTO<Void>> deleteProduct(@PathVariable Long id) {
 
         return ResponseEntity.ok(productService.deleteProduct(id));
@@ -82,26 +82,26 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductWithSupplierAndStockById(id));
     }
 
-    @GetMapping("/info/all")
+    @GetMapping("/info/all-prod")
     public ResponseEntity<ResponseDTO<List<ProductInfoDTO>>> getAllProductWithSupplierAndStock() {
 
         return ResponseEntity.ok(productService.getAllProductWithSupplierAndStock());
     }
 
-    @GetMapping("/info-detail/{id}")
+    @GetMapping("/{id}/info-detail")
     public ResponseEntity<ResponseDTO<ProductInfoDetailDTO>> getProductInfoDetail(@PathVariable Long id) {
 
         return ResponseEntity.ok(productService.getProductInfoDetail(id));
     }
 
-    @GetMapping("/received-qty/{poId}")
+    @GetMapping("/{poId}/received-qty")
     public ResponseEntity<ResponseDTO<List<SumReceivedGroupByProductDTO>>> getSumReceivedQtyByPoGroupByProduct(
             @PathVariable Long poId) {
 
         return ResponseEntity.ok(productService.getSumReceivedQtyByPoGroupByProduct(poId));
     }
 
-    @GetMapping("/with-sku-by-category/{categoryId}")
+    @GetMapping("/{categoryId}/with-sku-by-category")
     public ResponseEntity<ResponseDTO<List<ProductWithSkuByCategoryDTO>>> getAllSupllierProductWithSkuByCategory(
             @PathVariable Long categoryId) {
 

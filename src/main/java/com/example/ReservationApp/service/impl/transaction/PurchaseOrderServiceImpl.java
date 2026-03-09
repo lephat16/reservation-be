@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.notification.NotificationDTO;
 import com.example.ReservationApp.dto.response.transaction.PurchaseOrderDetailWithSkuFlatDTO;
 import com.example.ReservationApp.dto.transaction.PurchaseOrderDTO;
 import com.example.ReservationApp.dto.transaction.PurchaseOrderDetailDTO;
@@ -21,6 +22,7 @@ import com.example.ReservationApp.entity.supplier.SupplierProduct;
 import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
 import com.example.ReservationApp.entity.user.User;
+import com.example.ReservationApp.enums.NotificationType;
 import com.example.ReservationApp.enums.OrderStatus;
 import com.example.ReservationApp.enums.SupplierProductStatus;
 import com.example.ReservationApp.enums.UserRole;
@@ -35,6 +37,7 @@ import com.example.ReservationApp.repository.supplier.SupplierRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
 import com.example.ReservationApp.service.impl.auth.UserServiceImpl;
+import com.example.ReservationApp.service.notification.NotificationService;
 import com.example.ReservationApp.service.transaction.PurchaseOrderDetailService;
 import com.example.ReservationApp.service.transaction.PurchaseOrderService;
 
@@ -66,6 +69,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         private final PurchaseOrderDetailService poDetailService;
         private final ProductRepository productRepository;
         private final SupplierProductRepository supplierProductRepository;
+        private final NotificationService notificationService;
 
         /**
          * 購入注文を新規作成する。
@@ -133,6 +137,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 // 合計金額を計算して設定
                 po.setTotal(calcTotal(details));
                 purchaseOrderRepository.save(po);
+
+                notificationService.createNotification(
+                                NotificationDTO.builder()
+                                                .userId(currentUser.getId())
+                                                .title("新しい注文書が作成されました")
+                                                .message("注文ID #" + po.getId() + " が作成されました")
+                                                .type(NotificationType.ORDER)
+                                                .link("/purchase-order/" + po.getId())
+                                                .build());
                 // DTO に変換
                 PurchaseOrderDTO poDTO = purchaseOrderMapper.toDTO(po);
                 poDTO.setDetails(poDetailMapper.toDTOList(details));
@@ -391,6 +404,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 PurchaseOrder po = purchaseOrderRepository.findById(purchaseOrderId)
                                 .orElseThrow(() -> new NotFoundException("この注文書は存在していません"));
 
+                // ログインユーザー取得
+                User currentUser = userService.getCurrentUserEntity();
+
                 if (po.getStatus() != OrderStatus.NEW) {
                         throw new IllegalStateException("この注文書はすでに処理中です");
                 }
@@ -411,6 +427,15 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
                 po.setStatus(OrderStatus.PENDING);
                 purchaseOrderRepository.save(po);
+
+                notificationService.createNotification(
+                                NotificationDTO.builder()
+                                                .userId(currentUser.getId())
+                                                .title("注文書が送信されました")
+                                                .message("注文ID #" + po.getId() + " が送信されました")
+                                                .type(NotificationType.ORDER)
+                                                .link("/purchase-order/" + po.getId())
+                                                .build());
 
                 PurchaseOrderDTO poDTO = purchaseOrderMapper.toDTO(po);
                 return ResponseDTO.<PurchaseOrderDTO>builder()
