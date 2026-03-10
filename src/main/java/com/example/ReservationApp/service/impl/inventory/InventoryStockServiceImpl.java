@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.ReservationApp.dto.ResponseDTO;
+import com.example.ReservationApp.dto.notification.NotificationDTO;
 import com.example.ReservationApp.dto.request.DeliverStockItemDTO;
 import com.example.ReservationApp.dto.request.ReceiveStockItemDTO;
 import com.example.ReservationApp.dto.response.inventory.DeliverStockResultDTO;
@@ -28,6 +29,8 @@ import com.example.ReservationApp.entity.transaction.PurchaseOrder;
 import com.example.ReservationApp.entity.transaction.PurchaseOrderDetail;
 import com.example.ReservationApp.entity.transaction.SalesOrder;
 import com.example.ReservationApp.entity.transaction.SalesOrderDetail;
+import com.example.ReservationApp.entity.user.User;
+import com.example.ReservationApp.enums.NotificationType;
 import com.example.ReservationApp.enums.OrderStatus;
 import com.example.ReservationApp.enums.RefType;
 import com.example.ReservationApp.enums.StockChangeType;
@@ -40,12 +43,16 @@ import com.example.ReservationApp.mapper.SupplierProductMapper;
 import com.example.ReservationApp.repository.inventory.InventoryStockRepository;
 import com.example.ReservationApp.repository.inventory.StockHistoryRepository;
 import com.example.ReservationApp.repository.inventory.WarehouseRepository;
+import com.example.ReservationApp.repository.notification.NotificationRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.PurchaseOrderRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.repository.transaction.SalesOrderRepository;
+import com.example.ReservationApp.repository.user.UserRepository;
+import com.example.ReservationApp.service.auth.UserService;
 import com.example.ReservationApp.service.inventory.InventoryStockService;
+import com.example.ReservationApp.service.notification.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +80,8 @@ public class InventoryStockServiceImpl implements InventoryStockService {
     private final SalesOrderDetailRepository salesOrderDetailRepository;
     private final StockHistoryRepository stockHistoryRepository;
     private final SupplierProductRepository supplierProductRepository;
+    private final UserService userService;
+    private final NotificationService notificationService;
 
     /**
      * すべての在庫情報を取得します。
@@ -215,6 +224,7 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         if (po.getStatus() == OrderStatus.COMPLETED) {
             throw new IllegalStateException("この注文書は既に完了しています");
         }
+        User currentUser = userService.getCurrentUserEntity();
 
         boolean anyReceived = false; // 今回受領したアイテムがあるか
         boolean allReceived = true; // 全明細が完了しているか
@@ -345,6 +355,15 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         purchaseOrderRepository.save(po);
 
+        notificationService.createNotification(
+                NotificationDTO.builder()
+                        .userId(currentUser.getId())
+                        .title("発注書の入庫処理が行われました")
+                        .message("注文ID #" + po.getId() + " の商品が入庫されました")
+                        .type(NotificationType.STOCK)
+                        .link("/purchase-order/" + po.getId())
+                        .build());
+
         ReceiveStockResultDTO result = ReceiveStockResultDTO.builder()
                 .orderId(po.getId())
                 .status(po.getStatus())
@@ -381,6 +400,8 @@ public class InventoryStockServiceImpl implements InventoryStockService {
         if (so.getStatus() == OrderStatus.COMPLETED) {
             throw new IllegalStateException("この注文書は既に完了しています");
         }
+
+        User currentUser = userService.getCurrentUserEntity();
 
         boolean anyDelivered = false; // 今回出庫したアイテムがあるか
         boolean allDelivered = true; // 全明細が出庫完了か
@@ -474,6 +495,14 @@ public class InventoryStockServiceImpl implements InventoryStockService {
 
         salesOrderRepository.save(so);
 
+        notificationService.createNotification(
+                NotificationDTO.builder()
+                        .userId(currentUser.getId())
+                        .title("注文商品の出庫が完了しました")
+                        .message("注文ID #" + so.getId() + "の商品がすべて出庫されました")
+                        .type(NotificationType.STOCK)
+                        .link("/sales-order/" + so.getId())
+                        .build());
         // 出庫結果をDTOにまとめる
         DeliverStockResultDTO result = DeliverStockResultDTO.builder()
                 .salesOrderId(so.getId())

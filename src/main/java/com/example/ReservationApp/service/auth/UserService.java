@@ -13,6 +13,7 @@ import com.example.ReservationApp.dto.user.LoginHistoryDTO;
 import com.example.ReservationApp.dto.user.UserDTO;
 import com.example.ReservationApp.dto.user.UserSessionDTO;
 import com.example.ReservationApp.entity.user.TokenType;
+import com.example.ReservationApp.entity.user.User;
 import com.example.ReservationApp.security.AuthUser;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,5 +59,16 @@ public interface UserService {
     ResponseDTO<Void> revokeSession(Long id);
 
     ResponseDTO<Void> revokeAllSessions(Long userId);
+
+    /**
+     * 現在ログイン中のユーザー情報をEntity形式で取得する。
+     *
+     * Spring Securityの認証情報からメールアドレスを取得し、DBからユーザーを検索。
+     * 認証されていない場合やユーザーが見つからない場合はNotFoundExceptionを投げる。
+     *
+     * @return 現在ログイン中のUserエンティティ
+     * @throws NotFoundException 認証されていない場合またはユーザーが存在しない場合
+     */
+    User getCurrentUserEntity();
 
 }

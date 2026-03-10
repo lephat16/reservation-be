@@ -379,6 +379,7 @@ public class UserServiceImpl implements UserService {
      * @return 現在ログイン中のUserエンティティ
      * @throws NotFoundException 認証されていない場合またはユーザーが存在しない場合
      */
+    @Override
     public User getCurrentUserEntity() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {

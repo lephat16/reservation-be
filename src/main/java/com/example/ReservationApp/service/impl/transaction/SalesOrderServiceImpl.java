@@ -126,7 +126,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                         .title("新しい受注書が作成されました")
                         .message("受注ID #" + so.getId() + " が作成されました")
                         .type(NotificationType.ORDER)
-                        .link("/sell-order/" + so.getId())
+                        .link("/sales-order/" + so.getId())
                         .build());
 
         // DTOに変換してレスポンス返却
@@ -383,7 +383,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                         .title("受注書を受け取りました")
                         .message("受注ID #" + so.getId() + " の受注書を正常に受け取りました")
                         .type(NotificationType.ORDER)
-                        .link("/sell-order/" + so.getId())
+                        .link("/sales-order/" + so.getId())
                         .build());
         SalesOrderDTO soDTO = soMapper.toDTO(so);
         List<SalesOrderDetailDTO> detailDTOs = soDetailMapper.toDTOList(so.getDetails());
