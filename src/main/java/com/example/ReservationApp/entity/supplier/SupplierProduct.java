@@ -7,6 +7,7 @@ import java.util.List;
 import com.example.ReservationApp.entity.product.Product;
 import com.example.ReservationApp.enums.SupplierProductStatus;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -72,7 +73,7 @@ public class SupplierProduct {
     @NotNull(message = "ステータスは必須です")
     private SupplierProductStatus status = SupplierProductStatus.ACTIVE;
 
-    @OneToMany(mappedBy = "supplierProduct")
+    @OneToMany(mappedBy = "supplierProduct", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SupplierProductPriceHistory> priceHistories = new ArrayList<>();
 }

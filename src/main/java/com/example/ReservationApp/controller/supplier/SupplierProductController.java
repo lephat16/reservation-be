@@ -65,10 +65,10 @@ public class SupplierProductController {
                                 .ok(supplierProductService.getPriceHistory());
         }
 
-        @DeleteMapping("{spId}")
-        public ResponseEntity<ResponseDTO<Void>> deleteSupplierProduct(@PathVariable Long spId) {
+        @DeleteMapping("{sku}/delete-sp")
+        public ResponseEntity<ResponseDTO<Void>> deleteSupplierProduct(@PathVariable String sku) {
                 return ResponseEntity
-                                .ok(supplierProductService.deleteSupplierProduct(spId));
+                                .ok(supplierProductService.deleteSupplierProductBySku(sku));
         }
 
         @GetMapping("/{supplierId}/get-sp-with-stock")

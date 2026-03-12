@@ -15,7 +15,7 @@ public interface SupplierProductService {
 
     ResponseDTO<SupplierProductDTO> updateSupplierProduct(String sku, SupplierProductDTO spDTO);
 
-    ResponseDTO<Void> deleteSupplierProduct(Long spId);
+    ResponseDTO<Void> deleteSupplierProductBySku(String sku);
 
     ResponseDTO<List<SupplierProductPriceHistoryDTO>> getPriceHistory();
 

@@ -25,6 +25,7 @@ import com.example.ReservationApp.entity.supplier.SupplierProductPriceHistory;
 import com.example.ReservationApp.enums.CategoryStatus;
 import com.example.ReservationApp.enums.SupplierProductStatus;
 import com.example.ReservationApp.exception.AlreadyExistException;
+import com.example.ReservationApp.exception.BadRequestException;
 import com.example.ReservationApp.exception.NotFoundException;
 import com.example.ReservationApp.mapper.SupplierProductMapper;
 import com.example.ReservationApp.mapper.SupplierProductPriceHistoryMapper;
@@ -33,9 +34,11 @@ import com.example.ReservationApp.repository.product.ProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductPriceHistoryRepository;
 import com.example.ReservationApp.repository.supplier.SupplierProductRepository;
 import com.example.ReservationApp.repository.supplier.SupplierRepository;
+import com.example.ReservationApp.repository.transaction.SalesOrderDetailRepository;
 import com.example.ReservationApp.service.supplier.SupplierProductService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 仕入れ商品（SupplierProduct）に関するサービス実装クラス。
@@ -45,6 +48,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SupplierProductServiceImpl implements SupplierProductService {
 
         private final SupplierProductRepository supplierProductRepository;
@@ -53,6 +57,7 @@ public class SupplierProductServiceImpl implements SupplierProductService {
         private final CategoryRepository categoryRepository;
         private final SupplierProductMapper supplierProductMapper;
         private final SupplierProductPriceHistoryRepository supplierProductPriceHistoryRepository;
+        private final SalesOrderDetailRepository salesOrderDetailRepository;
         private final SupplierProductPriceHistoryMapper supplierProductPriceHistoryMapper;
 
         /**
@@ -93,14 +98,13 @@ public class SupplierProductServiceImpl implements SupplierProductService {
                 }
                 supplierProduct.setSupplier(supplier);
                 supplierProduct.setProduct(product);
-                supplierProduct.setStatus(SupplierProductStatus.ACTIVE);
+                supplierProduct.setStatus(spDTO.getStatus());
 
                 Category category = product.getCategory();
                 if (category != null && category.getStatus() != CategoryStatus.ACTIVE) {
                         category.setStatus(CategoryStatus.ACTIVE);
                         categoryRepository.save(category);
                 }
-
                 SupplierProduct savedSp = supplierProductRepository.save(supplierProduct);
 
                 if (savedSp.getCurrentPrice() != null) {
@@ -244,13 +248,15 @@ public class SupplierProductServiceImpl implements SupplierProductService {
          * @throws NotFoundException 指定した仕入れ商品が存在しない場合
          */
         @Override
-        public ResponseDTO<Void> deleteSupplierProduct(Long spId) {
-                SupplierProduct supplierProduct = supplierProductRepository.findById(spId)
+        @Transactional
+        public ResponseDTO<Void> deleteSupplierProductBySku(String sku) {
+                SupplierProduct supplierProduct = supplierProductRepository.findBySupplierSku(sku)
                                 .orElseThrow(() -> new NotFoundException("この仕入れ商品は存在していません"));
-
-                supplierProduct.setStatus(SupplierProductStatus.INACTIVE);
-
-                supplierProductRepository.save(supplierProduct);
+                log.info("spsku:{}", sku);
+                if (salesOrderDetailRepository.existsBySupplierProduct_SupplierSku(sku)) {
+                        throw new BadRequestException("この商品はすでに注文に使用されています");
+                }
+                supplierProductRepository.delete(supplierProduct);
 
                 return ResponseDTO.<Void>builder()
                                 .status(HttpStatus.OK.value())

@@ -80,8 +80,8 @@ public class CategoryServiceImpl implements CategoryService {
                 }
 
                 categoryDTO.setImageUrl(imagePath);
-
                 Category newCategory = categoryMapper.toEntity(categoryDTO);
+                newCategory.setStatus(categoryDTO.getStatus());
                 categoryRepository.save(newCategory);
                 categoryDTO.setId(newCategory.getId());
                 return ResponseDTO.<CategoryDTO>builder()
